@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<!-- saved from url=(0050)https://www.movable-type.co.uk/scripts/sha512.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>SHA-512 Cryptographic Hash Algorithm implemented in JavaScript | Movable Type Scripts</title>
+    
+    <meta name="author" content="Chris Veness, www.movable-type.co.uk, 2002-2017">
+    <meta name="keywords" content="sha-2 sha-512 hash function message digest algorithm javascript">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/normalize.min.css">
+    <link rel="stylesheet" href="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/prettify.css">
+    <link rel="stylesheet" href="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/base.css">
+    <link rel="stylesheet" href="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/stylesheet.css">
+    <link rel="stylesheet" href="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/mtl.css">
+    <style>
+        label    { width: 5em; vertical-align: top; }
+        input    { max-width: 42em; }
+        textarea { max-width: 42em; }
+        .production span { background-color: #ffff66; }
+        .production a { font-style: italic; }
+    </style>
+    <script async="" src="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/analytics.js"></script><script src="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/es6-promise.auto.min.js">/* polyfill es6 promises */</script>
+    <script src="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/fetch.min.js">/* polyfill fetch API */</script>
+    <script src="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/prettify.js">/* r224/r298 don't work! */</script>
+    <script src="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/mtl.js">/* MTL utils */</script>
+    <script type="module"> /* functional demo */
+        import Sha512 from '//rawcdn.githack.com/chrisveness/crypto/bafe342/sha512.js';
+
+        document.addEventListener('DOMContentLoaded', function(event) {
+            document.querySelector('#message').oninput = function() {
+                var t1 = performance.now();
+                var hash = Sha512.hash(this.value);
+                var t2 = performance.now();
+
+                document.querySelector('#digest').value = hash;
+                document.querySelector('#time').value = (t2-t1).toFixed(3)+'ms';
+            };
+
+            document.querySelector('#message').focus();
+            document.querySelector('#message').select();
+
+            document.querySelector('#message').oninput(); // initial hash call
+
+            // show source code
+            fetch('//raw.githubusercontent.com/chrisveness/crypto/master/sha512.js')
+                .then(function(res) { return res.ok ? res.text() : res.status+' '+res.statusText; })
+                .then(function(txt) { document.querySelector('#src-code').textContent = txt; prettyPrint(); })
+                .catch(function(err) { document.querySelector('#error').textContent = err.message; });
+        });
+    </script>
+</head>
+
+<body>
+<header> <a href="https://www.movable-type.co.uk/"><img src="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/mtl.gif" alt="Movable Type Home Page"></a>
+  <h1>Movable Type Scripts</h1>
+  <hr>
+  <h2>SHA-512 Cryptographic Hash Algorithm</h2>
+</header>
+
+<!--[if lt IE 9]><p class="alert align-left">This page no longer works on Internet Explorer 9 and earlier, which are <em><a href="https://www.microsoft.com/en-gb/WindowsForBusiness/End-of-IE-support">no longer supported</a></em></p><![endif]-->
+
+<p>A <b>cryptographic hash</b> (sometimes called ‘digest’) is a kind of ‘signature’ for a text or
+  a data file. SHA-512 generates an almost-unique 512-bit (32-byte) signature for a text. See <a href="https://www.movable-type.co.uk/scripts/sha512.html#src-code">below</a> for
+  the source code. </p>
+<form name="f">
+  <fieldset>
+  <legend>Enter any message to check its SHA-512 hash</legend>
+  <ul>
+    <li>
+      <label for="message">Message</label>
+      <textarea name="message" id="message" class="width-full">abc</textarea>
+    </li>
+    <li>
+      <label for="digest">Hash</label>
+      <textarea name="digest" id="digest" readonly="" class="width-full"></textarea>
+      <output class="small grey" id="time">7.460ms</output>
+    </li>
+    <li><small><i>Note SHA-512 hash of ‘abc’ should be:
+        ddaf35a193617aba­cc417349ae204131­12e6fa4e89a97ea2­0a9eeee64b55d39a­2192992a274fc1a8­36ba3c23a3feebbd­454d4423643ce80e­2a9ac94fa54ca49f</i></small></li>
+  </ul>
+  </fieldset>
+</form>
+<p id="error" class="alert"></p>
+
+<p>This is a companion to the <a href="https://www.movable-type.co.uk/scripts/sha256.html">SHA-256</a> script (where there’s more
+    explanation). This is a reference implementation, as close as possible to the NIST
+    specification, to help in understanding the algorithm (§ection numbers relate the code back to
+    sections in the standard); it is not at all optimised (using Chrome on a low-to-middling Core i5
+    PC, in timing tests this script will hash a short message in around 0.4 – 0.6 ms; longer
+    messages will be hashed at a speed of around 0.5 – 1 MB/sec.</p>
+
+<p>As SHA-512 is based on 64-bit unsigned integers, which are not natively supported by JavaScript,
+    this is more complex to implement in JavaScript than SHA-256. Here I’ve implemented a
+    <code>Long</code> library for UInt64 operations; there would be more efficient means of doing
+    this for an optimised implementation.</p>
+
+<p class="production"><span>Note that these scripts are intended to assist in studying the algorithms, not for production use.
+    For production use, I would recommend the
+    <a href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest">Web Cryptography API</a> for the browser
+    (see <a href="https://gist.github.com/chrisveness/e5a07769d06ed02a2587df16742d3fdd">example</a>), or the
+    <a href="https://nodejs.org/api/crypto.html#crypto_class_hash">crypto</a>
+    library in Node.js.</span> For password hashing, I have a WebCrypto
+    <a href="https://gist.github.com/chrisveness/770ee96945ec12ac84f134bf538d89fb">example using PBKDF2</a>.</p>
+
+<hr class="fullwidth">
+
+<p id="licence"><a href="https://tldrlegal.com/license/mit-license" class="float-right"><img src="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/license-osi-mit.png" alt="OSI MIT License"></a>
+    I offer these scripts for free use and adaptation to balance my debt to the open-source info-verse.
+    You are welcome to re-use these scripts [under an <a href="https://tldrlegal.com/license/mit-license">MIT</a> licence,
+    without any warranty express or implied] provided solely that you retain my copyright notice and a link to this page.</p>
+
+<p><a target="_blank" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=3737803" style="float: right;"><img alt="Paypal donation" style="margin: 4px;" src="./SHA-512 Cryptographic Hash Algorithm implemented in JavaScript _ Movable Type Scripts_files/btn_donate_SM.gif"></a> If
+    you would like to show your appreciation and support continued development of these scripts, I
+    would most gratefully accept <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=3737803" title="Thank you!">donations</a>.</p>
+<p>If you have any queries or find any problems, contact me at <span class="rtl">ku.oc.epyt-elbavom@cne-stpircs</span>.</p>
+
+<p><span class="note"><i>© 2016-2019 Chris Veness</i></span> </p>
+
+<hr class="fullwidth">
+
+<pre class="fullwidth prettyprint" id="src-code"><span class="com">/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */</span><span class="pln">
+</span><span class="com">/* SHA-512 (FIPS 180-4) implementation in JavaScript                  (c) Chris Veness 2016-2018  */</span><span class="pln">
+</span><span class="com">/*                                                                                   MIT Licence  */</span><span class="pln">
+</span><span class="com">/* www.movable-type.co.uk/scripts/sha512.html                                                     */</span><span class="pln">
+</span><span class="com">/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */</span><span class="pln">
+
+
+</span><span class="com">/**
+ * SHA-512 hash function reference implementation.
+ *
+ * This is an annotated direct implementation of FIPS 180-4, without any optimisations. It is
+ * intended to aid understanding of the algorithm rather than for production use.
+ *
+ * While it could be used where performance is not critical, I would recommend using the ‘Web
+ * Cryptography API’ (developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest) for the browser,
+ * or the ‘crypto’ library (nodejs.org/api/crypto.html#crypto_class_hash) in Node.js.
+ *
+ * SHA-512 is more difficult to implement in JavaScript than SHA-256, as it is based on 64-bit
+ * (unsigned) integers, which are not natively supported in JavaScript (in which all numbers are
+ * IEEE 754 64-bit floating-point numbers). A 'Long' library here provides UInt64-style support.
+ *
+ * See csrc.nist.gov/groups/ST/toolkit/secure_hashing.html
+ *     csrc.nist.gov/groups/ST/toolkit/examples.html
+ */</span><span class="pln">
+</span><span class="kwd">class</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+
+    </span><span class="com">/**
+     * Generates SHA-512 hash of string.
+     *
+     * @param   {string} msg - (Unicode) string to be hashed.
+     * @param   {Object} [options]
+     * @param   {string} [options.msgFormat=string] - Message format: 'string' for JavaScript string
+     *   (gets converted to UTF-8 for hashing); 'hex-bytes' for string of hex bytes ('616263' ≡ 'abc') .
+     * @param   {string} [options.outFormat=hex] - Output format: 'hex' for string of contiguous
+     *   hex bytes; 'hex-w' for grouping hex bytes into groups of (8 byte / 16 character) words.
+     * @returns {string} Hash of msg as hex character string.
+     */</span><span class="pln">
+    </span><span class="kwd">static</span><span class="pln"> hash</span><span class="pun">(</span><span class="pln">msg</span><span class="pun">,</span><span class="pln"> options</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> defaults </span><span class="pun">=</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> msgFormat</span><span class="pun">:</span><span class="pln"> </span><span class="str">'string'</span><span class="pun">,</span><span class="pln"> outFormat</span><span class="pun">:</span><span class="pln"> </span><span class="str">'hex'</span><span class="pln"> </span><span class="pun">};</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> opt </span><span class="pun">=</span><span class="pln"> </span><span class="typ">Object</span><span class="pun">.</span><span class="pln">assign</span><span class="pun">(</span><span class="pln">defaults</span><span class="pun">,</span><span class="pln"> options</span><span class="pun">);</span><span class="pln">
+
+        </span><span class="kwd">switch</span><span class="pln"> </span><span class="pun">(</span><span class="pln">opt</span><span class="pun">.</span><span class="pln">msgFormat</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+            </span><span class="kwd">default</span><span class="pun">:</span><span class="pln"> </span><span class="com">// default is to convert string to UTF-8, as SHA only deals with byte-streams</span><span class="pln">
+            </span><span class="kwd">case</span><span class="pln"> </span><span class="str">'string'</span><span class="pun">:</span><span class="pln">   msg </span><span class="pun">=</span><span class="pln"> utf8Encode</span><span class="pun">(</span><span class="pln">msg</span><span class="pun">);</span><span class="pln">       </span><span class="kwd">break</span><span class="pun">;</span><span class="pln">
+            </span><span class="kwd">case</span><span class="pln"> </span><span class="str">'hex-bytes'</span><span class="pun">:</span><span class="pln">msg </span><span class="pun">=</span><span class="pln"> hexBytesToString</span><span class="pun">(</span><span class="pln">msg</span><span class="pun">);</span><span class="pln"> </span><span class="kwd">break</span><span class="pun">;</span><span class="pln"> </span><span class="com">// mostly for running tests</span><span class="pln">
+        </span><span class="pun">}</span><span class="pln">
+
+        </span><span class="com">// constants [§4.2.3]</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> K </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln">
+            </span><span class="str">'428a2f98d728ae22'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'7137449123ef65cd'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'b5c0fbcfec4d3b2f'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'e9b5dba58189dbbc'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'3956c25bf348b538'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'59f111f1b605d019'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'923f82a4af194f9b'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'ab1c5ed5da6d8118'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'d807aa98a3030242'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'12835b0145706fbe'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'243185be4ee4b28c'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'550c7dc3d5ffb4e2'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'72be5d74f27b896f'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'80deb1fe3b1696b1'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'9bdc06a725c71235'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'c19bf174cf692694'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'e49b69c19ef14ad2'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'efbe4786384f25e3'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'0fc19dc68b8cd5b5'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'240ca1cc77ac9c65'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'2de92c6f592b0275'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'4a7484aa6ea6e483'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'5cb0a9dcbd41fbd4'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'76f988da831153b5'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'983e5152ee66dfab'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'a831c66d2db43210'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'b00327c898fb213f'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'bf597fc7beef0ee4'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'c6e00bf33da88fc2'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'d5a79147930aa725'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'06ca6351e003826f'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'142929670a0e6e70'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'27b70a8546d22ffc'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'2e1b21385c26c926'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'4d2c6dfc5ac42aed'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'53380d139d95b3df'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'650a73548baf63de'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'766a0abb3c77b2a8'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'81c2c92e47edaee6'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'92722c851482353b'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'a2bfe8a14cf10364'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'a81a664bbc423001'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'c24b8b70d0f89791'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'c76c51a30654be30'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'d192e819d6ef5218'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'d69906245565a910'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'f40e35855771202a'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'106aa07032bbd1b8'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'19a4c116b8d2d0c8'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'1e376c085141ab53'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'2748774cdf8eeb99'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'34b0bcb5e19b48a8'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'391c0cb3c5c95a63'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'4ed8aa4ae3418acb'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'5b9cca4f7763e373'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'682e6ff3d6b2b8a3'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'748f82ee5defb2fc'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'78a5636f43172f60'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'84c87814a1f0ab72'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'8cc702081a6439ec'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'90befffa23631e28'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'a4506cebde82bde9'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'bef9a3f7b2c67915'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'c67178f2e372532b'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'ca273eceea26619c'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'d186b8c721c0c207'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'eada7dd6cde0eb1e'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'f57d4f7fee6ed178'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'06f067aa72176fba'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'0a637dc5a2c898a6'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'113f9804bef90dae'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'1b710b35131c471b'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'28db77f523047d84'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'32caab7b40c72493'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'3c9ebe0a15c9bebc'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'431d67c49c100d4c'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'4cc5d4becb3e42b6'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'597f299cfc657e2a'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'5fcb6fab3ad6faec'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'6c44198c4a475817'</span><span class="pun">,</span><span class="pln">
+        </span><span class="pun">].</span><span class="pln">map</span><span class="pun">(</span><span class="pln">k </span><span class="pun">=&gt;</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">.</span><span class="pln">fromString</span><span class="pun">(</span><span class="pln">k</span><span class="pun">));</span><span class="pln">
+
+        </span><span class="com">// initial hash value [§5.3.5]</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> H </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln">
+            </span><span class="str">'6a09e667f3bcc908'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'bb67ae8584caa73b'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'3c6ef372fe94f82b'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'a54ff53a5f1d36f1'</span><span class="pun">,</span><span class="pln">
+            </span><span class="str">'510e527fade682d1'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'9b05688c2b3e6c1f'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'1f83d9abfb41bd6b'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'5be0cd19137e2179'</span><span class="pun">,</span><span class="pln">
+        </span><span class="pun">].</span><span class="pln">map</span><span class="pun">(</span><span class="pln">h </span><span class="pun">=&gt;</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">.</span><span class="pln">fromString</span><span class="pun">(</span><span class="pln">h</span><span class="pun">));</span><span class="pln">
+
+        </span><span class="com">// PREPROCESSING [§6.4.1]</span><span class="pln">
+
+        msg </span><span class="pun">+=</span><span class="pln"> </span><span class="typ">String</span><span class="pun">.</span><span class="pln">fromCharCode</span><span class="pun">(</span><span class="lit">0x80</span><span class="pun">);</span><span class="pln">  </span><span class="com">// add trailing '1' bit (+ 0's padding) to string [§5.1.2]</span><span class="pln">
+
+        </span><span class="com">// convert string msg into 1024-bit blocks (array of 16 uint64) [§5.2.2]</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> l </span><span class="pun">=</span><span class="pln"> msg</span><span class="pun">.</span><span class="pln">length</span><span class="pun">/</span><span class="lit">8</span><span class="pln"> </span><span class="pun">+</span><span class="pln"> </span><span class="lit">2</span><span class="pun">;</span><span class="pln"> </span><span class="com">// length (in 64-bit longs) of msg + ‘1’ + appended length</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> N </span><span class="pun">=</span><span class="pln"> </span><span class="typ">Math</span><span class="pun">.</span><span class="pln">ceil</span><span class="pun">(</span><span class="pln">l</span><span class="pun">/</span><span class="lit">16</span><span class="pun">);</span><span class="pln">  </span><span class="com">// number of 16-long (1024-bit) blocks required to hold 'l' ints</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> M </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Array</span><span class="pun">(</span><span class="pln">N</span><span class="pun">);</span><span class="pln">     </span><span class="com">// message M is N×16 array of 64-bit integers</span><span class="pln">
+
+        </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">let i</span><span class="pun">=</span><span class="lit">0</span><span class="pun">;</span><span class="pln"> i</span><span class="pun">&lt;</span><span class="pln">N</span><span class="pun">;</span><span class="pln"> i</span><span class="pun">++)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+            M</span><span class="pun">[</span><span class="pln">i</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Array</span><span class="pun">(</span><span class="lit">16</span><span class="pun">);</span><span class="pln">
+            </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">let j</span><span class="pun">=</span><span class="lit">0</span><span class="pun">;</span><span class="pln"> j</span><span class="pun">&lt;</span><span class="lit">16</span><span class="pun">;</span><span class="pln"> j</span><span class="pun">++)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="com">// encode 8 chars per uint64 (128 per block), big-endian encoding</span><span class="pln">
+                </span><span class="kwd">const</span><span class="pln"> lo </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">charCodeAt</span><span class="pun">(</span><span class="pln">i</span><span class="pun">*</span><span class="lit">128</span><span class="pun">+</span><span class="pln">j</span><span class="pun">*</span><span class="lit">8</span><span class="pun">+</span><span class="lit">0</span><span class="pun">)&lt;&lt;</span><span class="lit">24</span><span class="pun">)</span><span class="pln"> </span><span class="pun">|</span><span class="pln"> </span><span class="pun">(</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">charCodeAt</span><span class="pun">(</span><span class="pln">i</span><span class="pun">*</span><span class="lit">128</span><span class="pun">+</span><span class="pln">j</span><span class="pun">*</span><span class="lit">8</span><span class="pun">+</span><span class="lit">1</span><span class="pun">)&lt;&lt;</span><span class="lit">16</span><span class="pun">)</span><span class="pln">
+                         </span><span class="pun">|</span><span class="pln"> </span><span class="pun">(</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">charCodeAt</span><span class="pun">(</span><span class="pln">i</span><span class="pun">*</span><span class="lit">128</span><span class="pun">+</span><span class="pln">j</span><span class="pun">*</span><span class="lit">8</span><span class="pun">+</span><span class="lit">2</span><span class="pun">)&lt;&lt;</span><span class="pln"> </span><span class="lit">8</span><span class="pun">)</span><span class="pln"> </span><span class="pun">|</span><span class="pln"> </span><span class="pun">(</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">charCodeAt</span><span class="pun">(</span><span class="pln">i</span><span class="pun">*</span><span class="lit">128</span><span class="pun">+</span><span class="pln">j</span><span class="pun">*</span><span class="lit">8</span><span class="pun">+</span><span class="lit">3</span><span class="pun">)&lt;&lt;</span><span class="pln"> </span><span class="lit">0</span><span class="pun">);</span><span class="pln">
+                </span><span class="kwd">const</span><span class="pln"> hi </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">charCodeAt</span><span class="pun">(</span><span class="pln">i</span><span class="pun">*</span><span class="lit">128</span><span class="pun">+</span><span class="pln">j</span><span class="pun">*</span><span class="lit">8</span><span class="pun">+</span><span class="lit">4</span><span class="pun">)&lt;&lt;</span><span class="lit">24</span><span class="pun">)</span><span class="pln"> </span><span class="pun">|</span><span class="pln"> </span><span class="pun">(</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">charCodeAt</span><span class="pun">(</span><span class="pln">i</span><span class="pun">*</span><span class="lit">128</span><span class="pun">+</span><span class="pln">j</span><span class="pun">*</span><span class="lit">8</span><span class="pun">+</span><span class="lit">5</span><span class="pun">)&lt;&lt;</span><span class="lit">16</span><span class="pun">)</span><span class="pln">
+                         </span><span class="pun">|</span><span class="pln"> </span><span class="pun">(</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">charCodeAt</span><span class="pun">(</span><span class="pln">i</span><span class="pun">*</span><span class="lit">128</span><span class="pun">+</span><span class="pln">j</span><span class="pun">*</span><span class="lit">8</span><span class="pun">+</span><span class="lit">6</span><span class="pun">)&lt;&lt;</span><span class="pln"> </span><span class="lit">8</span><span class="pun">)</span><span class="pln"> </span><span class="pun">|</span><span class="pln"> </span><span class="pun">(</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">charCodeAt</span><span class="pun">(</span><span class="pln">i</span><span class="pun">*</span><span class="lit">128</span><span class="pun">+</span><span class="pln">j</span><span class="pun">*</span><span class="lit">8</span><span class="pun">+</span><span class="lit">7</span><span class="pun">)&lt;&lt;</span><span class="pln"> </span><span class="lit">0</span><span class="pun">);</span><span class="pln">
+                M</span><span class="pun">[</span><span class="pln">i</span><span class="pun">][</span><span class="pln">j</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="pln">lo</span><span class="pun">,</span><span class="pln"> hi</span><span class="pun">);</span><span class="pln">
+            </span><span class="pun">}</span><span class="pln"> </span><span class="com">// note running off the end of msg is ok 'cos bitwise ops on NaN return 0</span><span class="pln">
+        </span><span class="pun">}</span><span class="pln">
+        </span><span class="com">// add length (in bits) into final pair of 64-bit integers (big-endian) [§5.1.2]</span><span class="pln">
+        M</span><span class="pun">[</span><span class="pln">N</span><span class="pun">-</span><span class="lit">1</span><span class="pun">][</span><span class="lit">14</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="lit">0</span><span class="pun">,</span><span class="pln"> </span><span class="lit">0</span><span class="pun">);</span><span class="pln"> </span><span class="com">// tooo hard... limit msg to 2 million terabytes</span><span class="pln">
+        </span><span class="com">// note: most significant word would be (len-1)*8 &gt;&gt;&gt; 32, but since JS converts</span><span class="pln">
+        </span><span class="com">// bitwise-op args to 32 bits, we need to simulate this by arithmetic operators</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> lenHi </span><span class="pun">=</span><span class="pln"> </span><span class="pun">((</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">length</span><span class="pun">-</span><span class="lit">1</span><span class="pun">)*</span><span class="lit">8</span><span class="pun">)</span><span class="pln"> </span><span class="pun">/</span><span class="pln"> </span><span class="typ">Math</span><span class="pun">.</span><span class="pln">pow</span><span class="pun">(</span><span class="lit">2</span><span class="pun">,</span><span class="pln"> </span><span class="lit">32</span><span class="pun">);</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> lenLo </span><span class="pun">=</span><span class="pln"> </span><span class="pun">((</span><span class="pln">msg</span><span class="pun">.</span><span class="pln">length</span><span class="pun">-</span><span class="lit">1</span><span class="pun">)*</span><span class="lit">8</span><span class="pun">)</span><span class="pln"> </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="lit">0</span><span class="pun">;</span><span class="pln"> </span><span class="com">// note '&gt;&gt;&gt; 0' coerces number to unsigned 32-bit integer</span><span class="pln">
+        M</span><span class="pun">[</span><span class="pln">N</span><span class="pun">-</span><span class="lit">1</span><span class="pun">][</span><span class="lit">15</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="typ">Math</span><span class="pun">.</span><span class="pln">floor</span><span class="pun">(</span><span class="pln">lenHi</span><span class="pun">),</span><span class="pln"> lenLo</span><span class="pun">);</span><span class="pln">
+
+
+        </span><span class="com">// HASH COMPUTATION [§6.4.2]</span><span class="pln">
+
+        </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">let i</span><span class="pun">=</span><span class="lit">0</span><span class="pun">;</span><span class="pln"> i</span><span class="pun">&lt;</span><span class="pln">N</span><span class="pun">;</span><span class="pln"> i</span><span class="pun">++)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+            </span><span class="kwd">const</span><span class="pln"> W </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Array</span><span class="pun">(</span><span class="lit">80</span><span class="pun">);</span><span class="pln">
+
+            </span><span class="com">// 1 - prepare message schedule 'W'</span><span class="pln">
+            </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">let t</span><span class="pun">=</span><span class="lit">0</span><span class="pun">;</span><span class="pln">  t</span><span class="pun">&lt;</span><span class="lit">16</span><span class="pun">;</span><span class="pln"> t</span><span class="pun">++)</span><span class="pln"> W</span><span class="pun">[</span><span class="pln">t</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> M</span><span class="pun">[</span><span class="pln">i</span><span class="pun">][</span><span class="pln">t</span><span class="pun">];</span><span class="pln">
+            </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">let t</span><span class="pun">=</span><span class="lit">16</span><span class="pun">;</span><span class="pln"> t</span><span class="pun">&lt;</span><span class="lit">80</span><span class="pun">;</span><span class="pln"> t</span><span class="pun">++)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+                W</span><span class="pun">[</span><span class="pln">t</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.σ</span><span class="lit">1</span><span class="pun">(</span><span class="pln">W</span><span class="pun">[</span><span class="pln">t</span><span class="pun">-</span><span class="lit">2</span><span class="pun">]).</span><span class="pln">add</span><span class="pun">(</span><span class="pln">W</span><span class="pun">[</span><span class="pln">t</span><span class="pun">-</span><span class="lit">7</span><span class="pun">]).</span><span class="pln">add</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.σ</span><span class="lit">0</span><span class="pun">(</span><span class="pln">W</span><span class="pun">[</span><span class="pln">t</span><span class="pun">-</span><span class="lit">15</span><span class="pun">])).</span><span class="pln">add</span><span class="pun">(</span><span class="pln">W</span><span class="pun">[</span><span class="pln">t</span><span class="pun">-</span><span class="lit">16</span><span class="pun">]));</span><span class="pln">
+            </span><span class="pun">}</span><span class="pln">
+
+            </span><span class="com">// 2 - initialise working variables a, b, c, d, e, f, g, h with previous hash value</span><span class="pln">
+            let a </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">0</span><span class="pun">],</span><span class="pln"> b </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">1</span><span class="pun">],</span><span class="pln"> c </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">2</span><span class="pun">],</span><span class="pln"> d </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">3</span><span class="pun">],</span><span class="pln"> e </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">4</span><span class="pun">],</span><span class="pln"> f </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">5</span><span class="pun">],</span><span class="pln"> g </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">6</span><span class="pun">],</span><span class="pln"> h </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">7</span><span class="pun">];</span><span class="pln">
+
+            </span><span class="com">// 3 - main loop (note 'addition modulo 2^64')</span><span class="pln">
+            </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">let t</span><span class="pun">=</span><span class="lit">0</span><span class="pun">;</span><span class="pln"> t</span><span class="pun">&lt;</span><span class="lit">80</span><span class="pun">;</span><span class="pln"> t</span><span class="pun">++)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+                </span><span class="kwd">const</span><span class="pln"> T1 </span><span class="pun">=</span><span class="pln"> h</span><span class="pun">.</span><span class="pln">add</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.Σ</span><span class="lit">1</span><span class="pun">(</span><span class="pln">e</span><span class="pun">)).</span><span class="pln">add</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Ch</span><span class="pun">(</span><span class="pln">e</span><span class="pun">,</span><span class="pln"> f</span><span class="pun">,</span><span class="pln"> g</span><span class="pun">)).</span><span class="pln">add</span><span class="pun">(</span><span class="pln">K</span><span class="pun">[</span><span class="pln">t</span><span class="pun">]).</span><span class="pln">add</span><span class="pun">(</span><span class="pln">W</span><span class="pun">[</span><span class="pln">t</span><span class="pun">]);</span><span class="pln">
+                </span><span class="kwd">const</span><span class="pln"> T2 </span><span class="pun">=</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.Σ</span><span class="lit">0</span><span class="pun">(</span><span class="pln">a</span><span class="pun">).</span><span class="pln">add</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Maj</span><span class="pun">(</span><span class="pln">a</span><span class="pun">,</span><span class="pln"> b</span><span class="pun">,</span><span class="pln"> c</span><span class="pun">));</span><span class="pln">
+                h </span><span class="pun">=</span><span class="pln"> g</span><span class="pun">;</span><span class="pln">
+                g </span><span class="pun">=</span><span class="pln"> f</span><span class="pun">;</span><span class="pln">
+                f </span><span class="pun">=</span><span class="pln"> e</span><span class="pun">;</span><span class="pln">
+                e </span><span class="pun">=</span><span class="pln"> d</span><span class="pun">.</span><span class="pln">add</span><span class="pun">(</span><span class="pln">T1</span><span class="pun">);</span><span class="pln">
+                d </span><span class="pun">=</span><span class="pln"> c</span><span class="pun">;</span><span class="pln">
+                c </span><span class="pun">=</span><span class="pln"> b</span><span class="pun">;</span><span class="pln">
+                b </span><span class="pun">=</span><span class="pln"> a</span><span class="pun">;</span><span class="pln">
+                a </span><span class="pun">=</span><span class="pln"> T1</span><span class="pun">.</span><span class="pln">add</span><span class="pun">(</span><span class="pln">T2</span><span class="pun">);</span><span class="pln">
+            </span><span class="pun">}</span><span class="pln">
+
+            </span><span class="com">// 4 - compute the new intermediate hash value</span><span class="pln">
+            H</span><span class="pun">[</span><span class="lit">0</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">0</span><span class="pun">].</span><span class="pln">add</span><span class="pun">(</span><span class="pln">a</span><span class="pun">);</span><span class="pln">
+            H</span><span class="pun">[</span><span class="lit">1</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">1</span><span class="pun">].</span><span class="pln">add</span><span class="pun">(</span><span class="pln">b</span><span class="pun">);</span><span class="pln">
+            H</span><span class="pun">[</span><span class="lit">2</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">2</span><span class="pun">].</span><span class="pln">add</span><span class="pun">(</span><span class="pln">c</span><span class="pun">);</span><span class="pln">
+            H</span><span class="pun">[</span><span class="lit">3</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">3</span><span class="pun">].</span><span class="pln">add</span><span class="pun">(</span><span class="pln">d</span><span class="pun">);</span><span class="pln">
+            H</span><span class="pun">[</span><span class="lit">4</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">4</span><span class="pun">].</span><span class="pln">add</span><span class="pun">(</span><span class="pln">e</span><span class="pun">);</span><span class="pln">
+            H</span><span class="pun">[</span><span class="lit">5</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">5</span><span class="pun">].</span><span class="pln">add</span><span class="pun">(</span><span class="pln">f</span><span class="pun">);</span><span class="pln">
+            H</span><span class="pun">[</span><span class="lit">6</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">6</span><span class="pun">].</span><span class="pln">add</span><span class="pun">(</span><span class="pln">g</span><span class="pun">);</span><span class="pln">
+            H</span><span class="pun">[</span><span class="lit">7</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="lit">7</span><span class="pun">].</span><span class="pln">add</span><span class="pun">(</span><span class="pln">h</span><span class="pun">);</span><span class="pln">
+        </span><span class="pun">}</span><span class="pln">
+
+        </span><span class="com">// convert H0..H7 to hex strings (with leading zeros)</span><span class="pln">
+        </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">let h</span><span class="pun">=</span><span class="lit">0</span><span class="pun">;</span><span class="pln"> h</span><span class="pun">&lt;</span><span class="pln">H</span><span class="pun">.</span><span class="pln">length</span><span class="pun">;</span><span class="pln"> h</span><span class="pun">++)</span><span class="pln"> H</span><span class="pun">[</span><span class="pln">h</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> H</span><span class="pun">[</span><span class="pln">h</span><span class="pun">].</span><span class="pln">toString</span><span class="pun">();</span><span class="pln">
+
+        </span><span class="com">// concatenate H0..H7, with separator if required</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> separator </span><span class="pun">=</span><span class="pln"> opt</span><span class="pun">.</span><span class="pln">outFormat</span><span class="pun">==</span><span class="str">'hex-w'</span><span class="pln"> </span><span class="pun">?</span><span class="pln"> </span><span class="str">' '</span><span class="pln"> </span><span class="pun">:</span><span class="pln"> </span><span class="str">''</span><span class="pun">;</span><span class="pln">
+
+        </span><span class="kwd">return</span><span class="pln"> H</span><span class="pun">.</span><span class="pln">join</span><span class="pun">(</span><span class="pln">separator</span><span class="pun">);</span><span class="pln">
+
+        </span><span class="com">/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */</span><span class="pln">
+
+        </span><span class="kwd">function</span><span class="pln"> utf8Encode</span><span class="pun">(</span><span class="pln">str</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+            </span><span class="kwd">try</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+                </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">TextEncoder</span><span class="pun">().</span><span class="pln">encode</span><span class="pun">(</span><span class="pln">str</span><span class="pun">,</span><span class="pln"> </span><span class="str">'utf-8'</span><span class="pun">).</span><span class="pln">reduce</span><span class="pun">((</span><span class="pln">prev</span><span class="pun">,</span><span class="pln"> curr</span><span class="pun">)</span><span class="pln"> </span><span class="pun">=&gt;</span><span class="pln"> prev </span><span class="pun">+</span><span class="pln"> </span><span class="typ">String</span><span class="pun">.</span><span class="pln">fromCharCode</span><span class="pun">(</span><span class="pln">curr</span><span class="pun">),</span><span class="pln"> </span><span class="str">''</span><span class="pun">);</span><span class="pln">
+            </span><span class="pun">}</span><span class="pln"> </span><span class="kwd">catch</span><span class="pln"> </span><span class="pun">(</span><span class="pln">e</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="com">// no TextEncoder available?</span><span class="pln">
+                </span><span class="kwd">return</span><span class="pln"> unescape</span><span class="pun">(</span><span class="pln">encodeURIComponent</span><span class="pun">(</span><span class="pln">str</span><span class="pun">));</span><span class="pln"> </span><span class="com">// monsur.hossa.in/2012/07/20/utf-8-in-javascript.html</span><span class="pln">
+            </span><span class="pun">}</span><span class="pln">
+        </span><span class="pun">}</span><span class="pln">
+
+        </span><span class="kwd">function</span><span class="pln"> hexBytesToString</span><span class="pun">(</span><span class="pln">hexStr</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="com">// convert string of hex numbers to a string of chars (eg '616263' -&gt; 'abc').</span><span class="pln">
+            </span><span class="kwd">const</span><span class="pln"> str </span><span class="pun">=</span><span class="pln"> hexStr</span><span class="pun">.</span><span class="pln">replace</span><span class="pun">(</span><span class="str">' '</span><span class="pun">,</span><span class="pln"> </span><span class="str">''</span><span class="pun">);</span><span class="pln"> </span><span class="com">// allow space-separated groups</span><span class="pln">
+            </span><span class="kwd">return</span><span class="pln"> str</span><span class="pun">==</span><span class="str">''</span><span class="pln"> </span><span class="pun">?</span><span class="pln"> </span><span class="str">''</span><span class="pln"> </span><span class="pun">:</span><span class="pln"> str</span><span class="pun">.</span><span class="pln">match</span><span class="pun">(</span><span class="str">/.{2}/</span><span class="pln">g</span><span class="pun">).</span><span class="pln">map</span><span class="pun">(</span><span class="kwd">byte</span><span class="pln"> </span><span class="pun">=&gt;</span><span class="pln"> </span><span class="typ">String</span><span class="pun">.</span><span class="pln">fromCharCode</span><span class="pun">(</span><span class="pln">parseInt</span><span class="pun">(</span><span class="kwd">byte</span><span class="pun">,</span><span class="pln"> </span><span class="lit">16</span><span class="pun">))).</span><span class="pln">join</span><span class="pun">(</span><span class="str">''</span><span class="pun">);</span><span class="pln">
+        </span><span class="pun">}</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+
+    </span><span class="com">/**
+     * Rotates right (circular right shift) value x by n positions [§3.2.4].
+     * @private
+     */</span><span class="pln">
+    </span><span class="kwd">static</span><span class="pln"> ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> n</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="com">// emulates (x &gt;&gt;&gt; n) | (x &lt;&lt; (64-n)</span><span class="pln">
+        </span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span><span class="pln">n </span><span class="pun">==</span><span class="pln"> </span><span class="lit">0</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> x</span><span class="pun">;</span><span class="pln">
+        </span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span><span class="pln">n </span><span class="pun">==</span><span class="pln"> </span><span class="lit">32</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="pln">x</span><span class="pun">.</span><span class="pln">lo</span><span class="pun">,</span><span class="pln"> x</span><span class="pun">.</span><span class="pln">hi</span><span class="pun">);</span><span class="pln">
+
+        let hi </span><span class="pun">=</span><span class="pln"> x</span><span class="pun">.</span><span class="pln">hi</span><span class="pun">,</span><span class="pln"> lo </span><span class="pun">=</span><span class="pln"> x</span><span class="pun">.</span><span class="pln">lo</span><span class="pun">;</span><span class="pln">
+
+        </span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span><span class="pln">n </span><span class="pun">&gt;</span><span class="pln"> </span><span class="lit">32</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+            </span><span class="pun">[</span><span class="pln"> lo</span><span class="pun">,</span><span class="pln"> hi </span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln"> hi</span><span class="pun">,</span><span class="pln"> lo </span><span class="pun">];</span><span class="pln"> </span><span class="com">// swap hi/lo</span><span class="pln">
+            n </span><span class="pun">-=</span><span class="pln"> </span><span class="lit">32</span><span class="pun">;</span><span class="pln">
+        </span><span class="pun">}</span><span class="pln">
+
+        </span><span class="kwd">const</span><span class="pln"> hi1 </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="pln">hi </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> n</span><span class="pun">)</span><span class="pln"> </span><span class="pun">|</span><span class="pln"> </span><span class="pun">(</span><span class="pln">lo </span><span class="pun">&lt;&lt;</span><span class="pln"> </span><span class="pun">(</span><span class="lit">32</span><span class="pun">-</span><span class="pln">n</span><span class="pun">));</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> lo1 </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="pln">lo </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> n</span><span class="pun">)</span><span class="pln"> </span><span class="pun">|</span><span class="pln"> </span><span class="pun">(</span><span class="pln">hi </span><span class="pun">&lt;&lt;</span><span class="pln"> </span><span class="pun">(</span><span class="lit">32</span><span class="pun">-</span><span class="pln">n</span><span class="pun">));</span><span class="pln">
+
+        </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="pln">hi1</span><span class="pun">,</span><span class="pln"> lo1</span><span class="pun">);</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+
+    </span><span class="com">/**
+     * Logical functions [§4.1.3].
+     * @private
+     */</span><span class="pln">
+    </span><span class="kwd">static</span><span class="pln"> </span><span class="pun">Σ</span><span class="lit">0</span><span class="pun">(</span><span class="pln">x</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="lit">28</span><span class="pun">).</span><span class="pln">xor</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="lit">34</span><span class="pun">)).</span><span class="pln">xor</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="lit">39</span><span class="pun">));</span><span class="pln"> </span><span class="pun">}</span><span class="pln">
+    </span><span class="kwd">static</span><span class="pln"> </span><span class="pun">Σ</span><span class="lit">1</span><span class="pun">(</span><span class="pln">x</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="lit">14</span><span class="pun">).</span><span class="pln">xor</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="lit">18</span><span class="pun">)).</span><span class="pln">xor</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="lit">41</span><span class="pun">));</span><span class="pln"> </span><span class="pun">}</span><span class="pln">
+    </span><span class="kwd">static</span><span class="pln"> </span><span class="pun">σ</span><span class="lit">0</span><span class="pun">(</span><span class="pln">x</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln">  </span><span class="lit">1</span><span class="pun">).</span><span class="pln">xor</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln">  </span><span class="lit">8</span><span class="pun">)).</span><span class="pln">xor</span><span class="pun">(</span><span class="pln">x</span><span class="pun">.</span><span class="pln">shr</span><span class="pun">(</span><span class="lit">7</span><span class="pun">));</span><span class="pln"> </span><span class="pun">}</span><span class="pln">
+    </span><span class="kwd">static</span><span class="pln"> </span><span class="pun">σ</span><span class="lit">1</span><span class="pun">(</span><span class="pln">x</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="lit">19</span><span class="pun">).</span><span class="pln">xor</span><span class="pun">(</span><span class="typ">Sha512</span><span class="pun">.</span><span class="pln">ROTR</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> </span><span class="lit">61</span><span class="pun">)).</span><span class="pln">xor</span><span class="pun">(</span><span class="pln">x</span><span class="pun">.</span><span class="pln">shr</span><span class="pun">(</span><span class="lit">6</span><span class="pun">));</span><span class="pln"> </span><span class="pun">}</span><span class="pln">
+    </span><span class="kwd">static</span><span class="pln"> </span><span class="typ">Ch</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> y</span><span class="pun">,</span><span class="pln"> z</span><span class="pun">)</span><span class="pln">  </span><span class="pun">{</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="pun">(</span><span class="pln">x</span><span class="pun">.</span><span class="kwd">and</span><span class="pun">(</span><span class="pln">y</span><span class="pun">)).</span><span class="pln">xor</span><span class="pun">(</span><span class="pln">x</span><span class="pun">.</span><span class="kwd">not</span><span class="pun">().</span><span class="kwd">and</span><span class="pun">(</span><span class="pln">z</span><span class="pun">));</span><span class="pln"> </span><span class="pun">}</span><span class="pln">         </span><span class="com">// 'choice'</span><span class="pln">
+    </span><span class="kwd">static</span><span class="pln"> </span><span class="typ">Maj</span><span class="pun">(</span><span class="pln">x</span><span class="pun">,</span><span class="pln"> y</span><span class="pun">,</span><span class="pln"> z</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="pun">(</span><span class="pln">x</span><span class="pun">.</span><span class="kwd">and</span><span class="pun">(</span><span class="pln">y</span><span class="pun">)).</span><span class="pln">xor</span><span class="pun">(</span><span class="pln">x</span><span class="pun">.</span><span class="kwd">and</span><span class="pun">(</span><span class="pln">z</span><span class="pun">)).</span><span class="pln">xor</span><span class="pun">(</span><span class="pln">y</span><span class="pun">.</span><span class="kwd">and</span><span class="pun">(</span><span class="pln">z</span><span class="pun">));</span><span class="pln"> </span><span class="pun">}</span><span class="pln"> </span><span class="com">// 'majority'</span><span class="pln">
+
+</span><span class="pun">}</span><span class="pln">
+
+
+
+</span><span class="com">/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */</span><span class="pln">
+
+</span><span class="com">/**
+ * JavaScript has no support for 64-bit integers; this class provides methods required to support
+ * 64-bit unsigned integers within Sha256.
+ *
+ * All string manipulation is radix 16. Note n &gt;&gt;&gt; 0 coerces n to unsigned 32-bit value.
+ */</span><span class="pln">
+</span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">class</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+
+    constructor</span><span class="pun">(</span><span class="pln">hi</span><span class="pun">,</span><span class="pln"> lo</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+        </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi </span><span class="pun">=</span><span class="pln"> hi </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="lit">0</span><span class="pun">;</span><span class="pln">
+        </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">lo </span><span class="pun">=</span><span class="pln"> lo </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="lit">0</span><span class="pun">;</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+    </span><span class="kwd">static</span><span class="pln"> fromString</span><span class="pun">(</span><span class="pln">str</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> hi </span><span class="pun">=</span><span class="pln"> parseInt</span><span class="pun">(</span><span class="pln">str</span><span class="pun">.</span><span class="pln">slice</span><span class="pun">(</span><span class="lit">0</span><span class="pun">,</span><span class="pln"> </span><span class="pun">-</span><span class="lit">8</span><span class="pun">),</span><span class="pln"> </span><span class="lit">16</span><span class="pun">);</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> lo </span><span class="pun">=</span><span class="pln"> parseInt</span><span class="pun">(</span><span class="pln">str</span><span class="pun">.</span><span class="pln">slice</span><span class="pun">(-</span><span class="lit">8</span><span class="pun">),</span><span class="pln"> </span><span class="lit">16</span><span class="pun">);</span><span class="pln">
+
+        </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="pln">hi</span><span class="pun">,</span><span class="pln"> lo</span><span class="pun">);</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+    toString</span><span class="pun">()</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> hi </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="str">'00000000'</span><span class="pun">+</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi</span><span class="pun">.</span><span class="pln">toString</span><span class="pun">(</span><span class="lit">16</span><span class="pun">)).</span><span class="pln">slice</span><span class="pun">(-</span><span class="lit">8</span><span class="pun">);</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> lo </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="str">'00000000'</span><span class="pun">+</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">lo</span><span class="pun">.</span><span class="pln">toString</span><span class="pun">(</span><span class="lit">16</span><span class="pun">)).</span><span class="pln">slice</span><span class="pun">(-</span><span class="lit">8</span><span class="pun">);</span><span class="pln">
+
+        </span><span class="kwd">return</span><span class="pln"> hi </span><span class="pun">+</span><span class="pln"> lo</span><span class="pun">;</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+    add</span><span class="pun">(</span><span class="pln">that</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="com">// addition modulo 2^64</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> lo </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">lo </span><span class="pun">+</span><span class="pln"> that</span><span class="pun">.</span><span class="pln">lo</span><span class="pun">;</span><span class="pln">
+        </span><span class="kwd">const</span><span class="pln"> hi </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi </span><span class="pun">+</span><span class="pln"> that</span><span class="pun">.</span><span class="pln">hi </span><span class="pun">+</span><span class="pln"> </span><span class="pun">(</span><span class="pln">lo</span><span class="pun">&gt;</span><span class="lit">0x100000000</span><span class="pln"> </span><span class="pun">?</span><span class="pln"> </span><span class="lit">1</span><span class="pln"> </span><span class="pun">:</span><span class="pln"> </span><span class="lit">0</span><span class="pun">);</span><span class="pln"> </span><span class="com">// carry top bit if lo &gt; 2^32</span><span class="pln">
+
+        </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="pln">hi </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="lit">0</span><span class="pun">,</span><span class="pln"> lo </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="lit">0</span><span class="pun">);</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+    </span><span class="kwd">and</span><span class="pun">(</span><span class="pln">that</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="com">// &amp;</span><span class="pln">
+        </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi </span><span class="pun">&amp;</span><span class="pln"> that</span><span class="pun">.</span><span class="pln">hi</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">lo </span><span class="pun">&amp;</span><span class="pln"> that</span><span class="pun">.</span><span class="pln">lo</span><span class="pun">);</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+    xor</span><span class="pun">(</span><span class="pln">that</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="com">// ^</span><span class="pln">
+        </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi </span><span class="pun">^</span><span class="pln"> that</span><span class="pun">.</span><span class="pln">hi</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">lo </span><span class="pun">^</span><span class="pln"> that</span><span class="pun">.</span><span class="pln">lo</span><span class="pun">);</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+    </span><span class="kwd">not</span><span class="pun">()</span><span class="pln"> </span><span class="pun">{</span><span class="pln">  </span><span class="com">// ~</span><span class="pln">
+        </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(~</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi</span><span class="pun">,</span><span class="pln"> </span><span class="pun">~</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">lo</span><span class="pun">);</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+    shr</span><span class="pun">(</span><span class="pln">n</span><span class="pun">)</span><span class="pln"> </span><span class="pun">{</span><span class="pln"> </span><span class="com">// &gt;&gt;&gt;</span><span class="pln">
+        </span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span><span class="pln">n </span><span class="pun">==</span><span class="pln">  </span><span class="lit">0</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">;</span><span class="pln">
+        </span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span><span class="pln">n </span><span class="pun">==</span><span class="pln"> </span><span class="lit">32</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="lit">0</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi</span><span class="pun">);</span><span class="pln">
+        </span><span class="kwd">if</span><span class="pln"> </span><span class="pun">(</span><span class="pln">n </span><span class="pun">&gt;</span><span class="pln">  </span><span class="lit">32</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="lit">0</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> n</span><span class="pun">-</span><span class="lit">32</span><span class="pun">);</span><span class="pln">
+        </span><span class="com">/* n &lt; 32 */</span><span class="pln"> </span><span class="kwd">return</span><span class="pln"> </span><span class="kwd">new</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">.</span><span class="typ">Long</span><span class="pun">(</span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> n</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">lo </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> n </span><span class="pun">|</span><span class="pln"> </span><span class="kwd">this</span><span class="pun">.</span><span class="pln">hi </span><span class="pun">&lt;&lt;</span><span class="pln"> </span><span class="pun">(</span><span class="lit">32</span><span class="pun">-</span><span class="pln">n</span><span class="pun">));</span><span class="pln">
+    </span><span class="pun">}</span><span class="pln">
+
+</span><span class="pun">};</span><span class="pln">
+
+
+</span><span class="com">/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */</span><span class="pln">
+
+</span><span class="kwd">export</span><span class="pln"> </span><span class="kwd">default</span><span class="pln"> </span><span class="typ">Sha512</span><span class="pun">;</span></pre>
+
+
+
+</body></html>
