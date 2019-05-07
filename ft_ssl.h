@@ -15,6 +15,7 @@
 
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <dirent.h>
 # include <fcntl.h>
 # include <stdio.h>
 # include <stdlib.h>
@@ -30,7 +31,27 @@
 # define BIT_OFF(x, y) x &= (~y)
 # define BIT_FLIP(x, y) x ^= y
 
-# define HASH_COUNT 1
+/*
+** rotate left in bits
+*/
+
+# define ROTATE_LEFT(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
+
+/*
+** Processes Message in 16-word blocks; takes input of 32-bit words
+** and produces as output one 32-bit word
+*/
+
+# define F(x, y, z) ((x & y) | (~x & z))
+# define G(x, y, z) ((x & z) | (y & ~z))
+# define H(x, y, z) (x ^ y ^ z)
+# define I(x, y, z) (y ^ (x | ~z))
+
+/*
+** Number of elements in the dispatch table
+*/
+
+# define HASH_COUNT 2
 
 /*
 ** Bit masks
@@ -44,6 +65,30 @@ enum e_flag
 	OPT_S = 1 << 3	
 };
 
-int		turn_on_flags(char **av);
+typedef struct s_ssl
+{
+	int flag;
+	int var[4];
+	unsigned int A;
+	unsigned int B;
+	unsigned int C;
+	unsigned int D;
+}				t_ssl;
+
+typedef void (t_fxnptr)(char**, t_ssl*);
+
+typedef struct s_dispatch
+{
+	char		*key;
+	t_fxnptr	*fxnptr;
+}				t_dispatch;
+
+void	handle_md5(char **av, t_ssl *ms);
+void	handle_256(char **av, t_ssl *ms);
+
+int		turn_on_flags(char **av, t_ssl *ms);
+
+int	check_file(char *name);
+int	check_dir(char *name);
 
 #endif
