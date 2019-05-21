@@ -11,3 +11,10 @@
 /* ************************************************************************** */
 
 #include "ft_ssl.h"
+
+void	handle_256(char **av, t_ssl *ms)
+{
+	(void)av;
+	(void)ms;
+	printf("In SHA256\n");
+}

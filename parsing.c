@@ -12,14 +12,16 @@
 
 #include "ft_ssl.h"
 
-int turn_on_flags(char **av)
+int turn_on_flags(char **av, t_ssl *ms)
 {
 	int i;
 	int j;
 	int flags;
+	int count;
 
 	i = 1;
 	flags = 0;
+	count = 0;
 	while (av[i])
 	{
 		j = 1;
@@ -34,8 +36,10 @@ int turn_on_flags(char **av)
 				av[i][j] == 's' ? BIT_ON(flags, OPT_S) : 0;
 				j++;
 			}
+			count++;
 		}
 		i++;
 	}
-	return (flags);
+	ms->flag |= flags;
+	return (count + 1);
 }
