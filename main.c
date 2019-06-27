@@ -12,6 +12,16 @@
 
 #include "ft_ssl.h"
 
+/*
+	Preparing Input
+		- first divides the input in blocks of 512-bits each 
+		- 64 bits are inserted at the end of the last block
+		- the 64 bits are used to record the length of the original input
+		- if the last block is less than 512 bits, some extra bits are 'padded'
+		  to the end
+		- next, each block is divided into 16 words of 32 bits each 
+*/
+
 // 1. Parse
 // 	-	check for flags
 // 	-	determine if is a file or directory
@@ -47,7 +57,7 @@
 
 struct s_dispatch hashfxns[HASH_COUNT] = {
 	{"md5", handle_md5},
-	{"sha256", handle_256}
+	// {"sha256", handle_256}
 	// {"sha512",handle_512}
 };
 

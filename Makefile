@@ -16,7 +16,10 @@ CC		=	gcc
 CFLAGS	=	-Wall -Wextra -Werror
 
 SRC		=	main.c \
-			parsing.c
+			parsing.c \
+			md5.c \
+			sha256.c \
+			utilities.c 
 
 INC_FT	=	-I includes/libft
 LINK_FT	=	-L includes/libft -lft

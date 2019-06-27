@@ -6,7 +6,7 @@
 /*   By: kblack <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/05 22:04:13 by kblack            #+#    #+#             */
-/*   Updated: 2019/04/05 22:04:22 by kblack           ###   ########.fr       */
+/*   Updated: 2019/06/02 04:43:15 by kblack           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,4 +31,21 @@ int	check_dir(char *name)
 	closedir(d_stream);
 	d_stream = NULL;
 	return (0);
+}
+
+void *ft_calloc(size_t count, size_t size)
+{
+	void *ret;
+	size_t i;
+
+	i = 0;
+	if (!count || !size)
+		return (NULL);
+	ret = malloc(count * size);
+	while (i <= count)
+	{
+		((char *)ret)[i] = 0x00;
+		i++;
+	}
+	return (ret);
 }

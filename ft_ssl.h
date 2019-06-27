@@ -20,6 +20,7 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <unistd.h>
+# include <stdint.h>
 # include "libft.h"
 # include "ft_printf.h"
 
@@ -51,7 +52,7 @@
 ** Number of elements in the dispatch table
 */
 
-# define HASH_COUNT 2
+# define HASH_COUNT 1
 
 /*
 ** Bit masks
@@ -90,5 +91,6 @@ int		turn_on_flags(char **av, t_ssl *ms);
 
 int	check_file(char *name);
 int	check_dir(char *name);
+void *ft_calloc(size_t count, size_t size);
 
 #endif
