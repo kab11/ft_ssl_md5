@@ -62,6 +62,11 @@ void pre_processing(t_ssl *ms)
 	ms->var[3] = 0x10325476;
 }
 
+unsigned			convert_to_big_endian(unsigned n)
+{
+	return ((n << 24) | ((n << 8) & 0x00ff0000) | ((n >> 8) & 0x0000ff00) | (n >> 24));
+}
+
 /*
 	- The message is "padded" so that the length in bits is congruent to 448,
 	modulo 512; the message is extended so that its just 64 bits shy of being
@@ -113,100 +118,87 @@ int md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
 {
 	size_t new_len;
 
-	new_len = 0;
-	new_len = init_len * 8;
+	new_len = init_len * 8 + 1;
 	while (new_len % 512 != 448)
 		new_len++;
+	new_len /= 8;
+	printf("new_len = %zu\n", new_len);
 	if (!(ms->msg = ft_calloc(new_len + 64, 1)))
 		return (-1);
 	ft_memcpy(ms->msg, init_msg, init_len);
 	ms->msg[init_len] = 0x80;
-	((uint64_t *)ms->msg)[7] = (uint8_t)(init_len * 8);
-	// for (int i = 0; i < 8; i++)
-	// 	printf("[%.2d]: %llu\n", i, ((uint64_t*)ms->msg)[i]);
+	// uint32_t bits_len = 8 * init_len;
+	((uint64_t *)ms->msg)[7] = (init_len * 8);
+	// ft_memcpy(ms->msg + new_len, &bits_len, 4);
+	// for (int i = 0; i < 16; i++)
+	// 	printf("[%.2d]: %u\n", i, ((uint32_t*)(ms->msg))[i]);
 
 	return (0);
 }
 
 void md5_rounds(t_ssl *ms)
 {
-	unsigned int a = ms->var[0];
-	unsigned int b = ms->var[1];
-	unsigned int c = ms->var[2];
-	unsigned int d = ms->var[3];
+	uint32_t a = ms->var[0];
+	uint32_t b = ms->var[1];
+	uint32_t c = ms->var[2];
+	uint32_t d = ms->var[3];
+	// uint32_t *msg32 = (uint32_t *)ms->msg;
 	int g;
 	unsigned long f;
 
-	int t = -1;	 
-	int i;
-	while (++t < 1)
+	uint32_t i;
+	i = -1;
+	while (++i < 64)
 	{
-		i = -1;
-		a = ms->var[0];
-		b = ms->var[1];
-		c = ms->var[2];
-		d = ms->var[3];
-
-		while (++i < 64)
+		if (i < 16)
 		{
-			if (i >= 0 && i <= 15)
-			{
-				f = F(b, c, d);
-				g = i;
-			}
-			else if(i >= 16 && i <= 31)
-			{
-				f = G(b, c, d);
-				g = ((i * 5) + 1) % 16;
-			}
-			else if (i >= 32 && i <= 47)
-			{
-				f = H(b, c, d);
-				g = ((i * 3) + 5) % 16;
-			}
-			else if (i >= 48 && i <= 63)
-			{
-				f = I(b, c, d);
-				g = (i * 7) % 16;
-			}
-			f = f + a + k[i] + ((uint32_t*)ms->msg)[g];
-			a = d;
-			d = c;
-			c = b;
-			b += ROTATE_LEFT(f, r[i]);
-			printf("ROUND %d\n", i);
-			printf("a: %u\n", ms->var[0]);
-			printf("b: %u\n", ms->var[1]);
-			printf("c: %u\n", ms->var[2]);
-			printf("d: %u\n", ms->var[3]);
+			// f = F(b, c, d);
+			f = ((b & c) | ((~b) & d));
+			g = i;
 		}
+		else if(i < 32)
+		{
+			// f = G(b, c, d);
+			f = ((d & b) | ((~d) & c));
+			g = (5 * i + 1) % 16;
+		}
+		else if (i < 48)
+		{
+			// f = H(b, c, d);
+			f = (b ^ c ^ d);
+			g = (3 * i + 5) % 16;
+		}
+		else
+		{
+			// f = I(b, c, d);
+			f = (c ^ (b | (~d)));
+			g = (7 * i) % 16;
+		}
+		uint32_t tmp = d;
+		d = c;
+		c = b;
+		b = b + ROTATE_LEFT((f + a + k[i] + ((uint32_t*)ms->msg)[g]), r[i]);
+		a = tmp;
+
+		ft_printf("ROUND %d\n", i);
+		ft_printf("a: %u ", a);
+		ft_printf("b: %u ", b);
+		ft_printf("c: %u ", c);
+		ft_printf("d: %u\n", d);
+
 		ms->var[0] += a;
 		ms->var[1] += b;
 		ms->var[2] += c;
 		ms->var[3] += d;
 	}
-	printf("a: %x\n", ms->var[0]);
-	printf("b: %x\n", ms->var[1]);
-	printf("c: %x\n", ms->var[2]);
-	printf("d: %x\n", ms->var[3]);
+	printf("a: %u\n", ms->var[0]);
+	printf("b: %u\n", ms->var[1]);
+	printf("c: %u\n", ms->var[2]);
+	printf("d: %u\n", ms->var[3]);
 }
 
 void read_in_file(int fd, t_ssl *ms, char *file)
 {
-	// char *tmp;
-	// char *str;
-	// str = NULL;
-	// while ((ms->bytes_read = read(fd, ms->buf, 64)) > 0)
-	// {
-	// 	printf("%d", get_next_line(fd, file));
-	// 	ms->total_bytes += ms->bytes_read;
-	// 	printf("total = %d\n", ms->bytes_read);
-	// 	printf("total = %d\n", ms->total_bytes);
-	// 	tmp = str;
-	// 	str = ft_strjoin(str, (const char*)ms->buf);
-	// 	// printf("str =>\t %s\n", str);
-	// 	free(tmp);
-	// }
 	int n;
 
 	n = 0;
@@ -214,7 +206,6 @@ void read_in_file(int fd, t_ssl *ms, char *file)
 	{
 		printf("bytes_read = %d\n", ms->bytes_read);
 		ms->total_bytes += ms->bytes_read;
-		// ft_putendl(file);
 		free(file);
 	}
 	printf("total_bytes = %d\n", ms->total_bytes);
@@ -223,7 +214,6 @@ void read_in_file(int fd, t_ssl *ms, char *file)
 
 void	handle_md5(char **av, t_ssl *ms)
 {
-	(void)ms;
 	int i;
 	size_t init_len;
 	char **args;
