@@ -6,7 +6,7 @@
 /*   By: kblack <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/05 22:11:18 by kblack            #+#    #+#             */
-/*   Updated: 2019/06/02 05:11:16 by kblack           ###   ########.fr       */
+/*   Updated: 2019/07/11 22:49:12 by kblack           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,32 +26,33 @@
 	- refers to the max blocks that can be allocated which is guaranteed to be non-neg
 */
 
-// static unsigned char p[16] = {	0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-// 								0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-unsigned int r[64] =  {	7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-						5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
-						4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-						6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21};
+unsigned int s[64] = {
+	7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+	5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+	4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+	6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+};
 
 
 // /*  */
 unsigned int k[64] = {	0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
-						0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
-						0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
-						0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
-						0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa,
-						0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
-						0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
-						0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
-						0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c,
-						0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
-						0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05,
-						0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
-						0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039,
-						0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
-						0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
-						0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391 };
+	0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
+	0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
+	0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
+	0xf61e2562, 0xc040b340, 0x265e5a51, 0xe9b6c7aa,
+	0xd62f105d, 0x02441453, 0xd8a1e681, 0xe7d3fbc8,
+	0x21e1cde6, 0xc33707d6, 0xf4d50d87, 0x455a14ed,
+	0xa9e3e905, 0xfcefa3f8, 0x676f02d9, 0x8d2a4c8a,
+	0xfffa3942, 0x8771f681, 0x6d9d6122, 0xfde5380c,
+	0xa4beea44, 0x4bdecfa9, 0xf6bb4b60, 0xbebfbc70,
+	0x289b7ec6, 0xeaa127fa, 0xd4ef3085, 0x04881d05,
+	0xd9d4d039, 0xe6db99e5, 0x1fa27cf8, 0xc4ac5665,
+	0xf4292244, 0x432aff97, 0xab9423a7, 0xfc93a039,
+	0x655b59c3, 0x8f0ccc92, 0xffeff47d, 0x85845dd1,
+	0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
+	0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
+};
 
 void pre_processing(t_ssl *ms)
 {
@@ -118,83 +119,112 @@ int md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
 {
 	size_t new_len;
 
-	new_len = init_len * 8 + 1;
+	new_len = init_len * 8;
 	while (new_len % 512 != 448)
 		new_len++;
 	new_len /= 8;
 	printf("new_len = %zu\n", new_len);
-	if (!(ms->msg = ft_calloc(new_len + 64, 1)))
+	if (!(ms->msg = (unsigned char*)malloc(new_len + 8)))
 		return (-1);
 	ft_memcpy(ms->msg, init_msg, init_len);
 	ms->msg[init_len] = 0x80;
 	// uint32_t bits_len = 8 * init_len;
 	((uint64_t *)ms->msg)[7] = (init_len * 8);
+	ms->msg_len = new_len + 8;
 	// ft_memcpy(ms->msg + new_len, &bits_len, 4);
-	// for (int i = 0; i < 16; i++)
-	// 	printf("[%.2d]: %u\n", i, ((uint32_t*)(ms->msg))[i]);
+	for (int i = 0; i < 16; i++)
+	 	printf("[%.2d]: %u\n", i, ((uint32_t*)(ms->msg))[i]);
 
 	return (0);
 }
 
 void md5_rounds(t_ssl *ms)
 {
-	uint32_t a = ms->var[0];
-	uint32_t b = ms->var[1];
-	uint32_t c = ms->var[2];
-	uint32_t d = ms->var[3];
-	// uint32_t *msg32 = (uint32_t *)ms->msg;
+	uint32_t a;
+	uint32_t b;
+	uint32_t c;
+	uint32_t d;
+	uint32_t msg32[16];
 	int g;
 	unsigned long f;
 
-	uint32_t i;
-	i = -1;
-	while (++i < 64)
+	unsigned int i = 0;
+	unsigned int j;
+	unsigned int x;
+	printf("msg len = %u\n", ms->msg_len);
+
+	while (i < (ms->msg_len / 64))
 	{
-		if (i < 16)
-		{
-			// f = F(b, c, d);
-			f = ((b & c) | ((~b) & d));
-			g = i;
-		}
-		else if(i < 32)
-		{
-			// f = G(b, c, d);
-			f = ((d & b) | ((~d) & c));
-			g = (5 * i + 1) % 16;
-		}
-		else if (i < 48)
-		{
-			// f = H(b, c, d);
-			f = (b ^ c ^ d);
-			g = (3 * i + 5) % 16;
-		}
-		else
-		{
-			// f = I(b, c, d);
-			f = (c ^ (b | (~d)));
-			g = (7 * i) % 16;
-		}
-		uint32_t tmp = d;
-		d = c;
-		c = b;
-		b = b + ROTATE_LEFT((f + a + k[i] + ((uint32_t*)ms->msg)[g]), r[i]);
-		a = tmp;
+		a = ms->var[0];
+		b = ms->var[1];
+		c = ms->var[2];
+		d = ms->var[3];
 
-		ft_printf("ROUND %d\n", i);
-		ft_printf("a: %u ", a);
-		ft_printf("b: %u ", b);
-		ft_printf("c: %u ", c);
-		ft_printf("d: %u\n", d);
+		printf("a: %u\n", (int)a);
+		printf("b: %u\n", (int)b);
+		printf("c: %u\n", (int)c);
+		printf("d: %u\n", (int)d);
+		j = 0;
+		while (j < 16)
+		{
+			msg32[j] = ((uint32_t*)ms->msg)[j];
+			j++;
+		}
+		x = 0;
+		while (x < 64)
+		{
+			if (x < 16)
+			{
+				f = F(b, c, d);
+				//f = (b & c) | ((~b) & d);
+				g = x;
+			}
+			else if (x < 32)
+			{
+				f = G(b, c, d);
+				//f = (d & b) | ((~d) & c);
+				g = (5 * x + 1) % 16;
+			}
+			else if (x < 48)
+			{
+				f = H(b, c, d);
+				//f = (b ^ c ^ d);
+				g = (3 * x + 5) % 16;
+			}
+			else
+			{
+				f = I(b, c, d);
+				//f = (c ^ (b | (~d)));
+				g = (7 * x) % 16;
+			}
+		
+			f = f + a + k[x] + ((uint32_t*)ms->msg)[g];
 
+			unsigned int tmp = d;	
+			d = c;
+			c = b;
+			b = b + ROTATE_LEFT(f, s[x]);
+			a = tmp;
+			
+			ft_printf("ROUND %d\t", x);
+			ft_printf("a: %u ", a);
+			ft_printf("b: %u ", b);
+			ft_printf("c: %u ", c);
+			ft_printf("d: %u\n", d);
+			x++;
+		}
 		ms->var[0] += a;
 		ms->var[1] += b;
 		ms->var[2] += c;
 		ms->var[3] += d;
+
+		i++;
+
 	}
-	printf("a: %u\n", ms->var[0]);
-	printf("b: %u\n", ms->var[1]);
-	printf("c: %u\n", ms->var[2]);
-	printf("d: %u\n", ms->var[3]);
+	printf("a: %u\n", a);
+	printf("b: %u\n", b);
+	printf("c: %u\n", c);
+	printf("d: %u\n", d);
 }
 
 void read_in_file(int fd, t_ssl *ms, char *file)
@@ -229,12 +259,12 @@ void	handle_md5(char **av, t_ssl *ms)
 	{
 		printf("is a file\n");
 		int fd;
-		unsigned long f;
+		unsigned long f = 0;
 		unsigned long a = ms->var[0];
 		unsigned long b = ms->var[1];
 		unsigned long c = ms->var[2];
 		unsigned long d = ms->var[3];
-		int g;
+		int g = 0;
 		unsigned char *msg;
 		int new_len;
 
@@ -250,52 +280,44 @@ void	handle_md5(char **av, t_ssl *ms)
 			new_len = ms->total_bytes + 1;
 			while (new_len % 64 != 56)
 				new_len++;
-			msg = (unsigned char *)malloc(sizeof(new_len + 64));
+			msg = (unsigned char*)malloc(sizeof(new_len + 64));
 			ft_bzero(msg, new_len + 64);
 			ft_strcpy((char*)msg, args[i]);
 			printf("msg = %s\n", msg);
+			int i = -1;
 
-			int t = -1;
-			while (++t < ms->total_bytes)
+			while (++i < 64)
 			{
-				a = ms->var[0];
-				b = ms->var[1];
-				c = ms->var[2];
-				d = ms->var[3];
-
-				for (int i = 0; i < 64; i++)
+				if (i < 16)
 				{
-					if (i < 16)
-					{
-						f = F(ms->var[1], ms->var[2], ms->var[3]);
-						g = i;
-					}
-					else if(i < 32)
-					{
-						f = G(ms->var[1], ms->var[2], ms->var[3]);
-						g = (i * 5) % 16;
-					}
-					else if (i < 48)
-					{
-						f = H(ms->var[1], ms->var[2], ms->var[3]);
-						g = (i * 3) % 16;
-					}
-					else
-					{
-						f = I(ms->var[1], ms->var[2], ms->var[3]);
-						g = (i * 5) % 16;
-					}
-					f = f + ms->var[0] + k[i] + ms->buf[g];
-					ms->var[0] = ms->var[3];
-					ms->var[3] = ms->var[2];
-					ms->var[2] = ms->var[1];
-					ms->var[1] += ROTATE_LEFT(f, r[i]);
+					f = F(ms->var[1], ms->var[2], ms->var[3]);
+					g = i;
 				}
-				ms->var[0] += a;
-				ms->var[1] += b;
-				ms->var[2] += c;
-				ms->var[3] += d;
+				else if(i < 32)
+				{
+					f = G(ms->var[1], ms->var[2], ms->var[3]);
+					g = (i * 5) % 16;
+				}
+				else if (i < 48)
+				{
+					f = H(ms->var[1], ms->var[2], ms->var[3]);
+					g = (i * 3) % 16;
+				}
+				else
+				{
+					f = I(ms->var[1], ms->var[2], ms->var[3]);
+					g = (i * 5) % 16;
+				}
+				f = f + a + k[i] + ms->buf[g];
+				a = d;
+				d = c;
+				c = b;
+				b = b + ROTATE_LEFT(f, s[i]);
 			}
+			ms->var[0] += a;
+			ms->var[1] += b;
+			ms->var[2] += c;
+			ms->var[3] += d;
 		}
 		printf("a: %x\n", (int)a);
 		printf("b: %x\n", (int)b);
@@ -306,8 +328,8 @@ void	handle_md5(char **av, t_ssl *ms)
 	else if (isatty(fileno(stdin)))
 	{
 		printf("stdin\n");
-		md5_padding((uint8_t*)args[i], init_len, ms);
 		pre_processing(ms);
+		md5_padding((uint8_t*)args[i], init_len, ms);
 		md5_rounds(ms);
 	}
 	else
