@@ -20,6 +20,12 @@
 */
 
 /*
+	- The message is "padded" so that the length in bits is congruent to 448,
+	modulo 512; the message is extended so that its just 64 bits shy of being
+	a multiple of 512 bits long
+*/
+
+/*
 	size_t: is guaranteed to be big enough to contain the size of the biggest object
 			the host system can handle (compiler dependent)
 	- its never negative 
@@ -63,280 +69,142 @@ void pre_processing(t_ssl *ms)
 	ms->var[3] = 0x10325476;
 }
 
-unsigned			convert_to_big_endian(unsigned n)
-{
-	return ((n << 24) | ((n << 8) & 0x00ff0000) | ((n >> 8) & 0x0000ff00) | (n >> 24));
-}
-
-/*
-	- The message is "padded" so that the length in bits is congruent to 448,
-	modulo 512; the message is extended so that its just 64 bits shy of being
-	a multiple of 512 bits long
-*/
-
-#include <math.h>
-
-void	print_bits(unsigned long octet)
-{
-	size_t				i;
-	unsigned char	c;
-
-	i = pow(2, 63);
-	while (i > 0)
-	{
-		if (octet < i)
-		{
-			c = '0';
-			write(1, &c, 1);
-			i /= 2;
-		}
-		else
-		{
-			c = '1';
-			write(1, &c, 1);
-			octet = octet - i;
-			i /= 2;
-		}
-	}
-	// printf("i = %d\n", i);
-}
-
-/*
-** the newline character is equivalent to the ASCII linefeed character hex0A
-*/
-
-size_t get_msg_length(uint8_t *word)
-{
-	size_t i;
-
-	i = 0;
-	while (word[i] || (word[i] >= 8 && word[i] <= 14))
-		i++;
-	return (i);
-}
+// unsigned			convert_to_big_endian(unsigned n)
+// {
+// 	return ((n << 24) | ((n << 8) & 0x00ff0000) | ((n >> 8) & 0x0000ff00) | (n >> 24));
+// }
 
 int md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
 {
-	size_t new_len;
+	uint64_t new_len;
 
 	new_len = init_len * 8;
 	while (new_len % 512 != 448)
 		new_len++;
-	new_len /= 8;
-	printf("new_len = %zu\n", new_len);
-	if (!(ms->msg = (unsigned char*)malloc(new_len + 8)))
-		return (-1);
-	ft_memcpy(ms->msg, init_msg, init_len);
-	ms->msg[init_len] = 0x80;
-	// uint32_t bits_len = 8 * init_len;
-	((uint64_t *)ms->msg)[7] = (init_len * 8);
-	ms->msg_len = new_len + 8;
-	// ft_memcpy(ms->msg + new_len, &bits_len, 4);
-	for (int i = 0; i < 16; i++)
-	 	printf("[%.2d]: %u\n", i, ((uint32_t*)(ms->msg))[i]);
 
+	new_len /= 8;
+	// printf("init_len = %zu\n", init_len);
+	ms->msg = ((uint8_t*)ft_strnew(new_len + 8));
+	ft_memcpy((char*)ms->msg, (const char*)init_msg, init_len);
+	ms->msg[init_len] = 0x80;
+	((uint64_t *)ms->msg)[new_len / 8] = (uint64_t)(init_len * 8);
+	ms->msg_len = (uint64_t)(new_len + 8);
+	// for (int i = 0; i < 16; i++)
+	//  	printf("[%.2d]: %u\n", i, ((uint32_t*)(ms->msg))[i]);
 	return (0);
 }
 
 void md5_rounds(t_ssl *ms)
 {
-	uint32_t a;
-	uint32_t b;
-	uint32_t c;
-	uint32_t d;
-	uint32_t msg32[16];
-	int g;
-	unsigned long f;
+	unsigned int f = 0;
+	unsigned int g = 0;
+	unsigned int x = 0;
 
+	while (x < 64)
+	{
+		if (x <= 15)
+		{
+			f = F(ms->b, ms->c, ms->d);
+			//f = (b & c) | ((~b) & d);
+			g = x;
+		}
+		else if (x >= 16 && x <= 31)
+		{
+			f = G(ms->b, ms->c, ms->d);
+			//f = (d & b) | ((~d) & c);
+			g = (5 * x + 1) % 16;
+		}
+		else if (x >= 32 && x <= 47)
+		{
+			f = H(ms->b, ms->c, ms->d);
+			//f = (b ^ c ^ d);
+			g = (3 * x + 5) % 16;
+		}
+		else
+		{
+			f = I(ms->b, ms->c, ms->d);
+			//f = (c ^ (b | (~d)));
+			g = (7 * x) % 16;
+		}
+	
+		// f = f + ms->a + k[x] + ms->msg32[g];
+		uint32_t tmp = ms->d;	
+		ms->d = ms->c;
+		ms->c = ms->b;
+		// printf("rotateLeft(%x + %x  + %x + %x, %d)\n", ms->a, f, k[x], ms->msg32[g], s[x]);
+		ms->b = ms->b + ROTATE_LEFT((ms->a + f + ms->msg32[g] + k[x]), s[x]);
+		ms->a = tmp;
+		
+		// ft_printf("ROUND %d\t", x);
+		// ft_printf("a: %u ", ms->a);
+		// ft_printf("b: %u ", ms->b);
+		// ft_printf("c: %u ", ms->c);
+		// ft_printf("d: %u\n", ms->d);
+		x++;
+	}
+}
+
+void md5_algo(t_ssl *ms)
+{
 	unsigned int i = 0;
 	unsigned int j;
-	unsigned int x;
-	printf("msg len = %u\n", ms->msg_len);
+	// printf("msg len = %u\n", ms->msg_len);
 
-	while (i < (ms->msg_len / 64))
+	while (i < ms->msg_len)
 	{
-		a = ms->var[0];
-		b = ms->var[1];
-		c = ms->var[2];
-		d = ms->var[3];
-
-		printf("a: %u\n", (int)a);
-		printf("b: %u\n", (int)b);
-		printf("c: %u\n", (int)c);
-		printf("d: %u\n", (int)d);
+		ms->a = ms->var[0];
+		ms->b = ms->var[1];
+		ms->c = ms->var[2];
+		ms->d = ms->var[3];
 		j = 0;
-		while (j < 16)
-		{
-			msg32[j] = ((uint32_t*)ms->msg)[j];
-			j++;
-		}
-		x = 0;
-		while (x < 64)
-		{
-			if (x < 16)
-			{
-				f = F(b, c, d);
-				//f = (b & c) | ((~b) & d);
-				g = x;
-			}
-			else if (x < 32)
-			{
-				f = G(b, c, d);
-				//f = (d & b) | ((~d) & c);
-				g = (5 * x + 1) % 16;
-			}
-			else if (x < 48)
-			{
-				f = H(b, c, d);
-				//f = (b ^ c ^ d);
-				g = (3 * x + 5) % 16;
-			}
-			else
-			{
-				f = I(b, c, d);
-				//f = (c ^ (b | (~d)));
-				g = (7 * x) % 16;
-			}
-		
-			f = f + a + k[x] + ((uint32_t*)ms->msg)[g];
-
-			unsigned int tmp = d;	
-			d = c;
-			c = b;
-			b = b + ROTATE_LEFT(f, s[x]);
-			a = tmp;
-			
-			ft_printf("ROUND %d\t", x);
-			ft_printf("a: %u ", a);
-			ft_printf("b: %u ", b);
-			ft_printf("c: %u ", c);
-			ft_printf("d: %u\n", d);
-			x++;
-		}
-		ms->var[0] += a;
-		ms->var[1] += b;
-		ms->var[2] += c;
-		ms->var[3] += d;
-
-		i++;
-
+		ms->msg32 = (uint32_t*)(ms->msg + i);
+		md5_rounds(ms);
+		ms->var[0] += ms->a;
+		ms->var[1] += ms->b;
+		ms->var[2] += ms->c;
+		ms->var[3] += ms->d;
+		i += (64);
 	}
-	printf("a: %u\n", a);
-	printf("b: %u\n", b);
-	printf("c: %u\n", c);
-	printf("d: %u\n", d);
+	// ft_printf("a => %.8x\n", convert_to_big_endian(ms->var[0]));
+	// ft_printf("b => %.8x\n", convert_to_big_endian(ms->var[1]));
+	// ft_printf("c => %.8x\n", convert_to_big_endian(ms->var[2]));
+	// ft_printf("d => %.8x\n", convert_to_big_endian(ms->var[3]));
 }
-
-void read_in_file(int fd, t_ssl *ms, char *file)
-{
-	int n;
-
-	n = 0;
-	while ((ms->bytes_read = gnl_return_bytes(fd, &file, ms, 64)) > 0)
-	{
-		printf("bytes_read = %d\n", ms->bytes_read);
-		ms->total_bytes += ms->bytes_read;
-		free(file);
-	}
-	printf("total_bytes = %d\n", ms->total_bytes);
-	printf("content = %s", (char*)ms->content);
-}
-
 void	handle_md5(char **av, t_ssl *ms)
 {
 	int i;
-	size_t init_len;
-	char **args;
+	int fd;
+	char *input;
 
-	i = 0;
-	args = av + 1;
-	printf("arg = %s\n", args[i]);
-	init_len = ft_strlen(args[i]);
-	printf("ENTERING MD5\n");
-	if (check_dir(args[i]) == 0)
-		ft_printf("%s: %s: Is a directory\n", av[0], args[i]);
-	else if (check_file(args[i]) == 0)
+	i = 1;
+	input = av[0];
+	while(av[i] && av[i][0] == '-')
+		av += 1;
+	if (!isatty(0))
 	{
-		printf("is a file\n");
-		int fd;
-		unsigned long f = 0;
-		unsigned long a = ms->var[0];
-		unsigned long b = ms->var[1];
-		unsigned long c = ms->var[2];
-		unsigned long d = ms->var[3];
-		int g = 0;
-		unsigned char *msg;
-		int new_len;
-
-		new_len = 0;
-		if ((fd = open(args[i], O_RDONLY)) > -1)
-		{
-			printf("file \'%s\': is valid\n", args[i]);
-			read_in_file(fd, ms, args[i]);
-			// md5_update((uint8_t*)args[i], init_len);
-			pre_processing(ms);
-			// printf("a = %#010x\t b = %#010x\t c = %#010x\t d = %#010x\n", ms->var[0], ms->var[1], ms->var[2], ms->var[3]);
-			
-			new_len = ms->total_bytes + 1;
-			while (new_len % 64 != 56)
-				new_len++;
-			msg = (unsigned char*)malloc(sizeof(new_len + 64));
-			ft_bzero(msg, new_len + 64);
-			ft_strcpy((char*)msg, args[i]);
-			printf("msg = %s\n", msg);
-			int i = -1;
-
-			while (++i < 64)
-			{
-				if (i < 16)
-				{
-					f = F(ms->var[1], ms->var[2], ms->var[3]);
-					g = i;
-				}
-				else if(i < 32)
-				{
-					f = G(ms->var[1], ms->var[2], ms->var[3]);
-					g = (i * 5) % 16;
-				}
-				else if (i < 48)
-				{
-					f = H(ms->var[1], ms->var[2], ms->var[3]);
-					g = (i * 3) % 16;
-				}
-				else
-				{
-					f = I(ms->var[1], ms->var[2], ms->var[3]);
-					g = (i * 5) % 16;
-				}
-				f = f + a + k[i] + ms->buf[g];
-				a = d;
-				d = c;
-				c = b;
-				b = b + ROTATE_LEFT(f, s[i]);
-			}
-			ms->var[0] += a;
-			ms->var[1] += b;
-			ms->var[2] += c;
-			ms->var[3] += d;
-		}
-		printf("a: %x\n", (int)a);
-		printf("b: %x\n", (int)b);
-		printf("c: %x\n", (int)c);
-		printf("d: %x\n", (int)d);
-		close(fd);
+		// printf("stdin\n");
+		read_stdin_and_file(0, ms, av[i]);
 	}
-	else if (isatty(fileno(stdin)))
+	while (av[i])
 	{
-		printf("stdin\n");
 		pre_processing(ms);
-		md5_padding((uint8_t*)args[i], init_len, ms);
-		md5_rounds(ms);
-	}
-	else
-	{
-		int i = 0;
-    	char pipe[65536];
-   	 	while(-1 != (pipe[i++] = getchar()));
-   	 	fprintf(stdout, "piped content: >>%c<<\n", pipe[i - 1]);
+		if (check_dir(av[i]) == 0)
+			ft_printf("%s: %s: Is a directory\n", av[0], av[i]);
+		else if (ms->flag & FLAG_S)
+		{
+			// printf("this is s\n");
+			// BIT_OFF(ms->flag, FLAG_S);
+			md5_padding((uint8_t*)av[i], ft_strlen(av[i]), ms);
+			md5_algo(ms);
+			print_hash(ms, av[i]);
+		}
+		else if (check_file(av[i]) == 0)
+		{
+			// printf("is a file\n");
+			if ((fd = open(av[i], O_RDONLY))  -1)
+				read_stdin_and_file(fd, ms, av[i]);
+		}
+		// printf("av = %s\n", av[i]);
+		i++;
 	}
 }

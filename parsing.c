@@ -12,6 +12,8 @@
 
 #include "ft_ssl.h"
 
+/* if it comes from echo the flip flags because echo is a flag piped */
+
 int turn_on_flags(char **av, t_ssl *ms)
 {
 	int i;
@@ -19,27 +21,27 @@ int turn_on_flags(char **av, t_ssl *ms)
 	int flags;
 	int count;
 
-	i = 1;
+	i = 0;
 	flags = 0;
 	count = 0;
-	while (av[i])
+	// if (!isatty(0))
+	// 	printf("it is from echo\n");
+	while (av[++i])
 	{
-		j = 1;
+		j = 0;
 		if (av[i][0] == '-')
 		{
-			while (av[i][j])
+			while (av[i][++j])
 			{
-				printf("av[%d][%d] = %c\n", i, j, av[i][j]);
-				av[i][j] == 'p' ? BIT_ON(flags, OPT_P) : 0;
-				av[i][j] == 'q' ? BIT_ON(flags, OPT_Q) : 0;
-				av[i][j] == 'r' ? BIT_ON(flags, OPT_R) : 0;
-				av[i][j] == 's' ? BIT_ON(flags, OPT_S) : 0;
-				j++;
+				av[i][j] == 'p' ? BIT_ON(flags, FLAG_P) : 0;
+				av[i][j] == 'q' ? BIT_ON(flags, FLAG_Q) : 0;
+				av[i][j] == 'r' ? BIT_ON(flags, FLAG_R) : 0;
+				av[i][j] == 's' ? BIT_ON(flags, FLAG_S) : 0;
 			}
 			count++;
 		}
-		i++;
 	}
 	ms->flag |= flags;
+	// printf("flags = %d\n", flags);
 	return (count + 1);
 }

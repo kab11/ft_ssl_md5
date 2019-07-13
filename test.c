@@ -57,7 +57,7 @@
 
 struct s_dispatch hashfxns[HASH_COUNT] = {
 	{"md5", handle_md5},
-	{"sha256", handle_256}
+	// {"sha256", handle_256}
 	// {"sha512",handle_512}
 };
 
@@ -69,8 +69,7 @@ int startup(int ac, char **av)
 
 	i = 0;
 	bzero(&ms, sizeof(ms));
-	turn_on_flags(av, &ms);
-	// ft_printf("flags")
+	i += turn_on_flags(av, &ms);
 	while (i < ac)
 	{
 		j = -1;
@@ -92,9 +91,9 @@ int startup(int ac, char **av)
 
 int main(int argc, char **argv)
 {
-	if (argc < 2)
-		return(ft_printf("usage: ft_ssl command [-pqrs] [command args]\n"));
-	else
+	if (argc >= 2)
 		startup(argc, argv);
+	else
+		return(ft_printf("usage: ft_ssl command [-pqrs] [command args]\n"));
 	return (0);
 }

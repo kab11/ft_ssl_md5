@@ -20,7 +20,8 @@ SRC		=	main.c \
 			md5.c \
 			sha256.c \
 			utilities.c \
-			gnl_return_bytes.c 
+			gnl_return_bytes.c \
+			print_md5_sha.c
 
 INC_FT	=	-I includes/libft
 LINK_FT	=	-L includes/libft -lft
