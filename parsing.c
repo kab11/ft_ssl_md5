@@ -14,7 +14,7 @@
 
 /* if it comes from echo the flip flags because echo is a flag piped */
 
-int turn_on_flags(char **av, t_ssl *ms)
+int turn_on_flags(char **av)
 {
 	int i;
 	int j;
@@ -24,8 +24,8 @@ int turn_on_flags(char **av, t_ssl *ms)
 	i = 0;
 	flags = 0;
 	count = 0;
-	// if (!isatty(0))
-	// 	printf("it is from echo\n");
+	if (!isatty(0))
+		BIT_ON(flags, PIPE);
 	while (av[++i])
 	{
 		j = 0;
@@ -41,7 +41,7 @@ int turn_on_flags(char **av, t_ssl *ms)
 			count++;
 		}
 	}
-	ms->flag |= flags;
+	// ms->flag |= flags;
 	// printf("flags = %d\n", flags);
-	return (count + 1);
+	return (flags);
 }

@@ -41,7 +41,7 @@ unsigned int s[64] = {
 };
 
 
-// /*  */
+/* Rounds constants */
 unsigned int k[64] = {	0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
 	0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
 	0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
@@ -69,11 +69,6 @@ void pre_processing(t_ssl *ms)
 	ms->var[3] = 0x10325476;
 }
 
-// unsigned			convert_to_big_endian(unsigned n)
-// {
-// 	return ((n << 24) | ((n << 8) & 0x00ff0000) | ((n >> 8) & 0x0000ff00) | (n >> 24));
-// }
-
 int md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
 {
 	uint64_t new_len;
@@ -83,7 +78,6 @@ int md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
 		new_len++;
 
 	new_len /= 8;
-	// printf("init_len = %zu\n", init_len);
 	ms->msg = ((uint8_t*)ft_strnew(new_len + 8));
 	ft_memcpy((char*)ms->msg, (const char*)init_msg, init_len);
 	ms->msg[init_len] = 0x80;
@@ -170,13 +164,17 @@ void md5_algo(t_ssl *ms)
 	// ft_printf("c => %.8x\n", convert_to_big_endian(ms->var[2]));
 	// ft_printf("d => %.8x\n", convert_to_big_endian(ms->var[3]));
 }
-void	handle_md5(char **av, t_ssl *ms)
+
+void	handle_md5(char **av)
 {
 	int i;
 	int fd;
 	char *input;
+	t_ssl *ms;
 
 	i = 1;
+	bzero(&ms, sizeof(ms));
+	ms->flag |= turn_on_flags(av);
 	input = av[0];
 	while(av[i] && av[i][0] == '-')
 		av += 1;

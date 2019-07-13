@@ -65,11 +65,12 @@ int startup(int ac, char **av)
 {
 	int i;
 	int j;
-	t_ssl ms;
+	// t_ssl ms;
+	// t_ssl sh;
 
 	i = 0;
-	bzero(&ms, sizeof(ms));
-	turn_on_flags(av, &ms);
+	// bzero(&ms, sizeof(ms));
+	// turn_on_flags(av, &ms);
 	// ft_printf("flags")
 	while (i < ac)
 	{
@@ -78,7 +79,7 @@ int startup(int ac, char **av)
 		{
 			if (ft_strcmp(av[i], hashfxns[j].key) == 0)
 			{
-				hashfxns[j].fxnptr(av + i, &ms);
+				hashfxns[j].fxnptr(av + i);
 				return (1);
 			}
 			j++;

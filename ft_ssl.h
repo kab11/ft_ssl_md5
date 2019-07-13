@@ -64,13 +64,15 @@ enum e_flag
 	FLAG_P = 1 << 0,
 	FLAG_Q = 1 << 1,
 	FLAG_R = 1 << 2,
-	FLAG_S = 1 << 3	
+	FLAG_S = 1 << 3,
+	PIPE = 1 << 4	
 };
 
 typedef struct s_ssl
 {
 	unsigned int flag;
 	unsigned int var[4];
+	unsigned int state[8];
 	int buf[16];
 	unsigned int bytes_read;
 	unsigned int total_bytes;
@@ -86,7 +88,8 @@ typedef struct s_ssl
 	uint32_t *msg32;
 }				t_ssl;
 
-typedef void (t_fxnptr)(char**, t_ssl*);
+// typedef void (t_fxnptr)(char**, t_ssl*);
+typedef void (t_fxnptr)(char**);
 
 typedef struct s_dispatch
 {
@@ -94,10 +97,10 @@ typedef struct s_dispatch
 	t_fxnptr	*fxnptr;
 }				t_dispatch;
 
-void	handle_md5(char **av, t_ssl *ms);
-void	handle_256(char **av, t_ssl *ms);
+void	handle_md5(char **av);
+void	handle_256(char **av);
 
-int		turn_on_flags(char **av, t_ssl *ms);
+int		turn_on_flags(char **av);
 
 int	check_file(char *name);
 int	check_dir(char *name);
