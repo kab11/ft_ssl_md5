@@ -6,22 +6,22 @@
 #    By: kblack <marvin@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/04/01 20:54:09 by kblack            #+#    #+#              #
-#    Updated: 2019/04/01 20:54:11 by kblack           ###   ########.fr        #
+#    Updated: 2019/07/13 09:01:40 by kblack           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME	=	ft_ssl
 
 CC		=	gcc
-CFLAGS	=	-Wall -Wextra -Werror
+CFLAGS	=	-g -Wall -Wextra -Werror
 
 SRC		=	main.c \
 			parsing.c \
 			md5.c \
 			sha256.c \
 			utilities.c \
-			gnl_return_bytes.c \
-			print_md5_sha.c
+			print_md5_sha.c \
+			sha_utilities.c 
 
 INC_FT	=	-I includes/libft
 LINK_FT	=	-L includes/libft -lft

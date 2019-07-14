@@ -12,20 +12,17 @@
 
 #include "ft_ssl.h"
 
-/* if it comes from echo the flip flags because echo is a flag piped */
-
-int turn_on_flags(char **av)
+int		turn_on_flags(char **av)
 {
-	int i;
-	int j;
-	int flags;
-	int count;
+	int	i;
+	int	j;
+	int	flags;
+	int	count;
 
 	i = 0;
 	flags = 0;
 	count = 0;
-	if (!isatty(0))
-		BIT_ON(flags, PIPE);
+	(!isatty(0)) ? BIT_ON(flags, PIPE) : 0;
 	while (av[++i])
 	{
 		j = 0;
@@ -41,7 +38,5 @@ int turn_on_flags(char **av)
 			count++;
 		}
 	}
-	// ms->flag |= flags;
-	// printf("flags = %d\n", flags);
 	return (flags);
 }

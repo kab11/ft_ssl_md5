@@ -69,7 +69,7 @@ void pre_processing(t_ssl *ms)
 	ms->var[3] = 0x10325476;
 }
 
-int md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
+void md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
 {
 	uint64_t new_len;
 
@@ -83,9 +83,8 @@ int md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
 	ms->msg[init_len] = 0x80;
 	((uint64_t *)ms->msg)[new_len / 8] = (uint64_t)(init_len * 8);
 	ms->msg_len = (uint64_t)(new_len + 8);
-	// for (int i = 0; i < 16; i++)
-	//  	printf("[%.2d]: %u\n", i, ((uint32_t*)(ms->msg))[i]);
-	return (0);
+	for (int i = 0; i < 16; i++)
+	 	printf("[%.2d]: %u\n", i, ((uint32_t*)(ms->msg))[i]);
 }
 
 void md5_rounds(t_ssl *ms)
@@ -99,41 +98,28 @@ void md5_rounds(t_ssl *ms)
 		if (x <= 15)
 		{
 			f = F(ms->b, ms->c, ms->d);
-			//f = (b & c) | ((~b) & d);
 			g = x;
 		}
 		else if (x >= 16 && x <= 31)
 		{
 			f = G(ms->b, ms->c, ms->d);
-			//f = (d & b) | ((~d) & c);
 			g = (5 * x + 1) % 16;
 		}
 		else if (x >= 32 && x <= 47)
 		{
 			f = H(ms->b, ms->c, ms->d);
-			//f = (b ^ c ^ d);
 			g = (3 * x + 5) % 16;
 		}
 		else
 		{
 			f = I(ms->b, ms->c, ms->d);
-			//f = (c ^ (b | (~d)));
 			g = (7 * x) % 16;
 		}
-	
-		// f = f + ms->a + k[x] + ms->msg32[g];
 		uint32_t tmp = ms->d;	
 		ms->d = ms->c;
 		ms->c = ms->b;
-		// printf("rotateLeft(%x + %x  + %x + %x, %d)\n", ms->a, f, k[x], ms->msg32[g], s[x]);
 		ms->b = ms->b + ROTATE_LEFT((ms->a + f + ms->msg32[g] + k[x]), s[x]);
 		ms->a = tmp;
-		
-		// ft_printf("ROUND %d\t", x);
-		// ft_printf("a: %u ", ms->a);
-		// ft_printf("b: %u ", ms->b);
-		// ft_printf("c: %u ", ms->c);
-		// ft_printf("d: %u\n", ms->d);
 		x++;
 	}
 }
@@ -142,8 +128,8 @@ void md5_algo(t_ssl *ms)
 {
 	unsigned int i = 0;
 	unsigned int j;
-	// printf("msg len = %u\n", ms->msg_len);
 
+	pre_processing(ms);
 	while (i < ms->msg_len)
 	{
 		ms->a = ms->var[0];
@@ -159,50 +145,46 @@ void md5_algo(t_ssl *ms)
 		ms->var[3] += ms->d;
 		i += (64);
 	}
-	// ft_printf("a => %.8x\n", convert_to_big_endian(ms->var[0]));
-	// ft_printf("b => %.8x\n", convert_to_big_endian(ms->var[1]));
-	// ft_printf("c => %.8x\n", convert_to_big_endian(ms->var[2]));
-	// ft_printf("d => %.8x\n", convert_to_big_endian(ms->var[3]));
 }
 
-void	handle_md5(char **av)
+void	handle_md5(char **av, int flag)
 {
+	printf("========== MD5 ==========\n");
 	int i;
 	int fd;
 	char *input;
-	t_ssl *ms;
+	t_ssl ms;
 
 	i = 1;
 	bzero(&ms, sizeof(ms));
-	ms->flag |= turn_on_flags(av);
 	input = av[0];
 	while(av[i] && av[i][0] == '-')
-		av += 1;
+		i++;
 	if (!isatty(0))
 	{
-		// printf("stdin\n");
-		read_stdin_and_file(0, ms, av[i]);
+		printf("stdin\n");
+		read_stdin_and_file(0, &ms, av[i]);
 	}
 	while (av[i])
 	{
-		pre_processing(ms);
+		printf("av = asdasdas\n");
 		if (check_dir(av[i]) == 0)
 			ft_printf("%s: %s: Is a directory\n", av[0], av[i]);
-		else if (ms->flag & FLAG_S)
+		else if (flag & FLAG_S)
 		{
-			// printf("this is s\n");
+			printf("this is s\n");
 			// BIT_OFF(ms->flag, FLAG_S);
-			md5_padding((uint8_t*)av[i], ft_strlen(av[i]), ms);
-			md5_algo(ms);
-			print_hash(ms, av[i]);
+			md5_padding((uint8_t*)av[i], ft_strlen(av[i]), &ms);
+			md5_algo(&ms);
+			print_hash(&ms, av[i]);
 		}
 		else if (check_file(av[i]) == 0)
 		{
-			// printf("is a file\n");
+			printf("is a file\n");
 			if ((fd = open(av[i], O_RDONLY))  -1)
-				read_stdin_and_file(fd, ms, av[i]);
+				read_stdin_and_file(fd, &ms, av[i]);
 		}
-		// printf("av = %s\n", av[i]);
+		printf("av = %s\n", av[i]);
 		i++;
 	}
 }

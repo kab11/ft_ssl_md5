@@ -40,57 +40,6 @@ unsigned			convert_to_big_endian(unsigned n)
 	return ((n << 24) | ((n << 8) & 0x00ff0000) | ((n >> 8) & 0x0000ff00) | (n >> 24));
 }
 
-void *ft_calloc(size_t count, size_t size)
-{
-	void *ret;
-	size_t i;
-
-	i = 0;
-	if (!count || !size)
-		return (NULL);
-	ret = malloc(count * size);
-	while (i <= count)
-	{
-		((char *)ret)[i] = 0x00;
-		i++;
-	}
-	return (ret);
-}
-
-void	print_bits(unsigned long octet)
-{
-	size_t				i;
-	unsigned char	c;
-
-	i = pow(2, 63);
-	while (i > 0)
-	{
-		if (octet < i)
-		{
-			c = '0';
-			write(1, &c, 1);
-			i /= 2;
-		}
-		else
-		{
-			c = '1';
-			write(1, &c, 1);
-			octet = octet - i;
-			i /= 2;
-		}
-	}
-}
-
-size_t get_msg_length(uint8_t *word)
-{
-	size_t i;
-
-	i = 0;
-	while (word[i] || (word[i] >= 8 && word[i] <= 14))
-		i++;
-	return (i);
-}
-
 void read_stdin_and_file(int fd, t_ssl *ms, char *input)
 {
 	char buf[2];
@@ -111,6 +60,8 @@ void read_stdin_and_file(int fd, t_ssl *ms, char *input)
 		}
 		init_len++;
 	}
+	// printf("str = %s\n", str);
+	// printf("initlen = %zu\n", init_len);
 	md5_padding((uint8_t*)str, init_len, ms);
 	md5_algo(ms);
 	print_hash(ms, input);

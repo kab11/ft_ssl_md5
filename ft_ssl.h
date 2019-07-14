@@ -6,7 +6,7 @@
 /*   By: kblack <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/04/02 16:07:28 by kblack            #+#    #+#             */
-/*   Updated: 2019/07/11 22:44:19 by kblack           ###   ########.fr       */
+/*   Updated: 2019/07/13 17:33:07 by kblack           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,10 +23,9 @@
 # include <stdint.h>
 # include "libft.h"
 # include "ft_printf.h"
-// # include <inttypes.h>
 
 /*
-** Bit operations 
+** Bit operations
 */
 
 # define BIT_ON(x, y) x |= y
@@ -34,10 +33,11 @@
 # define BIT_FLIP(x, y) x ^= y
 
 /*
-** Rotate left in bits
+** Rotate bits
 */
 
 # define ROTATE_LEFT(x, n) ((x << n) | (x >> (32 - n)))
+# define ROT_RIGHT(x, n) ((x >> n) | (x << (32 - n)))
 
 /*
 ** Processes Message in 16-word blocks
@@ -59,63 +59,85 @@
 ** Bit masks
 */
 
-enum e_flag
+enum			e_flag
 {
 	FLAG_P = 1 << 0,
 	FLAG_Q = 1 << 1,
 	FLAG_R = 1 << 2,
 	FLAG_S = 1 << 3,
-	PIPE = 1 << 4	
+	PIPE = 1 << 4
 };
 
-typedef struct s_ssl
+typedef struct		s_ssl
 {
-	unsigned int flag;
-	unsigned int var[4];
-	unsigned int state[8];
-	int buf[16];
-	unsigned int bytes_read;
-	unsigned int total_bytes;
-	void *content;
-	uint32_t a;
-	uint32_t b;
-	uint32_t c;
-	uint32_t d;
-	// unsigned int g;
-	// unsigned int x;
-	uint8_t *msg;
-	uint64_t msg_len;
-	uint32_t *msg32;
-}				t_ssl;
+	unsigned int	flag;
+	unsigned int	var[4];
+	int				buf[16];
+	unsigned int	bytes_read;
+	unsigned int	total_bytes;
+	void			*content;
+	uint32_t		a;
+	uint32_t		b;
+	uint32_t		c;
+	uint32_t		d;
+	uint8_t			*msg;
+	uint64_t		msg_len;
+	uint32_t		*msg32;
+}					t_ssl;
 
-// typedef void (t_fxnptr)(char**, t_ssl*);
-typedef void (t_fxnptr)(char**);
-
-typedef struct s_dispatch
+typedef struct		s_sha
 {
-	char		*key;
-	t_fxnptr	*fxnptr;
-}				t_dispatch;
+	unsigned int	flag;
+	unsigned int	state[8];
+	int				buf[16];
+	unsigned int	bytes_read;
+	unsigned int	total_bytes;
+	void			*content;
+	uint32_t		a;
+	uint32_t		b;
+	uint32_t		c;
+	uint32_t		d;
+	uint32_t		e;
+	uint32_t		f;
+	uint32_t		g;
+	uint32_t		h;
+	uint32_t		s0;
+	uint32_t		s1;
+	uint32_t		ch;
+	uint32_t		temp1;
+	uint32_t		temp2;
+	uint32_t		maj;
+	uint32_t		m[64];
+	uint8_t			*msg;
+	uint64_t		msg_len;
+	uint32_t		*msg32;
+}					t_sha;
 
-void	handle_md5(char **av);
-void	handle_256(char **av);
+typedef void		(t_fxnptr)(char**, int);
 
-int		turn_on_flags(char **av);
+typedef struct		s_dispatch
+{
+	char			*key;
+	t_fxnptr		*fxnptr;
+}					t_dispatch;
 
-int	check_file(char *name);
-int	check_dir(char *name);
+void				handle_md5(char **av, int flag);
+void				handle_256(char **av, int flag);
+int					turn_on_flags(char **av);
+int					check_file(char *name);
+int					check_dir(char *name);
 unsigned			convert_to_big_endian(unsigned n);
-void *ft_calloc(size_t count, size_t size);
-void	print_bits(unsigned long octet);
-size_t get_msg_length(uint8_t *word);
-void read_stdin_and_file(int fd, t_ssl *ms, char *input);
+void				read_stdin_and_file(int fd, t_ssl *ms, char *input);
+void				md5_algo(t_ssl *ms);
+void				md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms);
+void				print_hash(t_ssl *ms, char *input);
 
-void md5_algo(t_ssl *ms);
-int md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms);
-
-
-void print_hash(t_ssl *ms, char* input);
-
-int					gnl_return_bytes(const int fd, char **line, t_ssl *s, size_t size);
+/*
+** SHA Utilities
+*/
+void				read_sha_stdin(int fd, t_sha *sh, char *input);
+int					sha_padding(uint8_t *init_msg, size_t init_len, t_sha *sh);
+void				sha_algo(t_sha *sh);
+void				print_sha_hash(t_sha *sh, char *input);
 
 #endif
