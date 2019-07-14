@@ -67,8 +67,8 @@ int		startup(int ac, char **av)
 		}
 	}
 	if (j > HASH_COUNT)
-		ft_printf("ft_ssl:Error: '%s' is an invalid command.\n
-			Message Digest commands\nmd5\t sha256\n", av[1]);
+		ft_printf("ft_ssl:Error: '%s' is an invalid command.\n");
+		ft_printf("Message Digest commands\nmd5\t sha256\n", av[1]);
 	return (0);
 }
 

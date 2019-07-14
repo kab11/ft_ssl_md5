@@ -39,6 +39,7 @@
 # define ROTATE_LEFT(x, n) ((x << n) | (x >> (32 - n)))
 # define ROT_RIGHT(x, n) ((x >> n) | (x << (32 - n)))
 
+
 /*
 ** Processes Message in 16-word blocks
 ** Takes input of 32-bit words and produces as output one 32-bit word
@@ -83,6 +84,10 @@ typedef struct		s_ssl
 	uint8_t			*msg;
 	uint64_t		msg_len;
 	uint32_t		*msg32;
+	unsigned int	f;
+	unsigned int	g;
+	unsigned int	x;
+	uint32_t		tmp;
 }					t_ssl;
 
 typedef struct		s_sha
@@ -131,6 +136,7 @@ void				read_stdin_and_file(int fd, t_ssl *ms, char *input);
 void				md5_algo(t_ssl *ms);
 void				md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms);
 void				print_hash(t_ssl *ms, char *input);
+void				pre_processing(t_ssl *ms);
 
 /*
 ** SHA Utilities
@@ -139,5 +145,6 @@ void				read_sha_stdin(int fd, t_sha *sh, char *input);
 int					sha_padding(uint8_t *init_msg, size_t init_len, t_sha *sh);
 void				sha_algo(t_sha *sh);
 void				print_sha_hash(t_sha *sh, char *input);
+void				sha_pre_processing(t_sha *sh);
 
 #endif

@@ -35,6 +35,14 @@ int	check_dir(char *name)
 	return (0);
 }
 
+void				pre_processing(t_ssl *ms)
+{
+	ms->var[0] = 0x67452301;
+	ms->var[1] = 0xefcdab89;
+	ms->var[2] = 0x98badcfe;
+	ms->var[3] = 0x10325476;
+}
+
 unsigned			convert_to_big_endian(unsigned n)
 {
 	return ((n << 24) | ((n << 8) & 0x00ff0000) | ((n >> 8) & 0x0000ff00) | (n >> 24));
@@ -60,8 +68,6 @@ void read_stdin_and_file(int fd, t_ssl *ms, char *input)
 		}
 		init_len++;
 	}
-	// printf("str = %s\n", str);
-	// printf("initlen = %zu\n", init_len);
 	md5_padding((uint8_t*)str, init_len, ms);
 	md5_algo(ms);
 	print_hash(ms, input);

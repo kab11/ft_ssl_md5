@@ -12,37 +12,14 @@
 
 #include "ft_ssl.h"
 
-/*
-	uint8_t (1 byte) == unsigned char [0-255] [0x00-0xFF]
-	uint16_t (2bytes) == unsigned short [0-65535] [0x0000-0xFFFF]
-	uint32_t (32 bytes) == unsigned int [0-4294967295] [0x00000000-0xFFFFFFFF]
-	uint64_t (64 bytes) == unsigned long long [0-184467440733709551615] [0x0000000000000000-0xFFFFFFFFFFFFFFFF]
-*/
-
-/*
-	- The message is "padded" so that the length in bits is congruent to 448,
-	modulo 512; the message is extended so that its just 64 bits shy of being
-	a multiple of 512 bits long
-*/
-
-/*
-	size_t: is guaranteed to be big enough to contain the size of the biggest object
-			the host system can handle (compiler dependent)
-	- its never negative 
-	- refers to the max blocks that can be allocated which is guaranteed to be non-neg
-*/
-
-
-unsigned int s[64] = {
+unsigned int g_s[64] = {
 	7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
 	5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
 	4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
 	6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
 };
 
-
-/* Rounds constants */
-unsigned int k[64] = {	0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
+unsigned int g_k[64] = {	0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
 	0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
 	0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
 	0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
@@ -60,78 +37,71 @@ unsigned int k[64] = {	0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
 	0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
 };
 
-void pre_processing(t_ssl *ms)
+void				md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
 {
-	/* Initialize variables */
-	ms->var[0] = 0x67452301;
-	ms->var[1] = 0xefcdab89;
-	ms->var[2] = 0x98badcfe;
-	ms->var[3] = 0x10325476;
-}
-
-void md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
-{
-	uint64_t new_len;
+	uint64_t		new_len;
 
 	new_len = init_len * 8;
 	while (new_len % 512 != 448)
 		new_len++;
-
 	new_len /= 8;
 	ms->msg = ((uint8_t*)ft_strnew(new_len + 8));
 	ft_memcpy((char*)ms->msg, (const char*)init_msg, init_len);
 	ms->msg[init_len] = 0x80;
 	((uint64_t *)ms->msg)[new_len / 8] = (uint64_t)(init_len * 8);
 	ms->msg_len = (uint64_t)(new_len + 8);
-	for (int i = 0; i < 16; i++)
-	 	printf("[%.2d]: %u\n", i, ((uint32_t*)(ms->msg))[i]);
 }
 
-void md5_rounds(t_ssl *ms)
+void				adjust_working_var(t_ssl *ms)
 {
-	unsigned int f = 0;
-	unsigned int g = 0;
-	unsigned int x = 0;
+	ms->tmp = ms->d;
+	ms->d = ms->c;
+	ms->c = ms->b;
+	ms->b = ms->b + ROTATE_LEFT((ms->a + ms->f +
+		ms->msg32[ms->g] + g_k[ms->x]), g_s[ms->x]);
+	ms->a = ms->tmp;
+}
 
-	while (x < 64)
+void				md5_rounds(t_ssl *ms)
+{
+	while (++ms->x < 64)
 	{
-		if (x <= 15)
+		if (ms->x <= 15)
 		{
-			f = F(ms->b, ms->c, ms->d);
-			g = x;
+			ms->f = F(ms->b, ms->c, ms->d);
+			ms->g = ms->x;
 		}
-		else if (x >= 16 && x <= 31)
+		else if (ms->x >= 16 && ms->x <= 31)
 		{
-			f = G(ms->b, ms->c, ms->d);
-			g = (5 * x + 1) % 16;
+			ms->f = G(ms->b, ms->c, ms->d);
+			ms->g = (5 * ms->x + 1) % 16;
 		}
-		else if (x >= 32 && x <= 47)
+		else if (ms->x >= 32 && ms->x <= 47)
 		{
-			f = H(ms->b, ms->c, ms->d);
-			g = (3 * x + 5) % 16;
+			ms->f = H(ms->b, ms->c, ms->d);
+			ms->g = (3 * ms->x + 5) % 16;
 		}
 		else
 		{
-			f = I(ms->b, ms->c, ms->d);
-			g = (7 * x) % 16;
+			ms->f = I(ms->b, ms->c, ms->d);
+			ms->g = (7 * ms->x) % 16;
 		}
-		uint32_t tmp = ms->d;	
-		ms->d = ms->c;
-		ms->c = ms->b;
-		ms->b = ms->b + ROTATE_LEFT((ms->a + f + ms->msg32[g] + k[x]), s[x]);
-		ms->a = tmp;
-		x++;
+		adjust_working_var(ms);
 	}
 }
 
-void md5_algo(t_ssl *ms)
+void				md5_algo(t_ssl *ms)
 {
-	unsigned int i = 0;
-	unsigned int j;
+	unsigned int	i;
+	unsigned int	j;
 
+	i = 0;
 	pre_processing(ms);
 	while (i < ms->msg_len)
 	{
+		ms->f = 0;
+		ms->g = 0;
+		ms->x = -1;
 		ms->a = ms->var[0];
 		ms->b = ms->var[1];
 		ms->c = ms->var[2];
@@ -143,48 +113,35 @@ void md5_algo(t_ssl *ms)
 		ms->var[1] += ms->b;
 		ms->var[2] += ms->c;
 		ms->var[3] += ms->d;
-		i += (64);
+		i += 64;
 	}
 }
 
-void	handle_md5(char **av, int flag)
+void				handle_md5(char **av, int flag)
 {
-	printf("========== MD5 ==========\n");
-	int i;
-	int fd;
-	char *input;
-	t_ssl ms;
+	int				i;
+	int				fd;
+	t_ssl			ms;
 
 	i = 1;
-	bzero(&ms, sizeof(ms));
-	input = av[0];
-	while(av[i] && av[i][0] == '-')
+	ft_bzero(&ms, sizeof(ms));
+	while (av[i] && av[i][0] == '-')
 		i++;
 	if (!isatty(0))
-	{
-		printf("stdin\n");
 		read_stdin_and_file(0, &ms, av[i]);
-	}
 	while (av[i])
 	{
-		printf("av = asdasdas\n");
 		if (check_dir(av[i]) == 0)
 			ft_printf("%s: %s: Is a directory\n", av[0], av[i]);
 		else if (flag & FLAG_S)
 		{
-			printf("this is s\n");
-			// BIT_OFF(ms->flag, FLAG_S);
 			md5_padding((uint8_t*)av[i], ft_strlen(av[i]), &ms);
 			md5_algo(&ms);
 			print_hash(&ms, av[i]);
 		}
 		else if (check_file(av[i]) == 0)
-		{
-			printf("is a file\n");
-			if ((fd = open(av[i], O_RDONLY))  -1)
+			if ((fd = open(av[i], O_RDONLY)) > -1)
 				read_stdin_and_file(fd, &ms, av[i]);
-		}
-		printf("av = %s\n", av[i]);
 		i++;
 	}
 }
