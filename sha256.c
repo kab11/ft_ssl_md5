@@ -25,7 +25,7 @@ unsigned int g_w[64] = {	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
 	0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-int					sha_padding(uint8_t *init_msg, size_t init_len, t_sha *sh)
+int					sha_padding(uint8_t *init_msg, uint64_t init_len, t_sha *sh)
 {
 	int			i;
 	uint64_t	new_len;
@@ -59,7 +59,7 @@ void				add_to_hash(t_sha *sh)
 
 void				main_loop(t_sha *sh)
 {
-	printf("sha256 main loop\n");
+	// printf("sha256 main loop\n");
 	int				i;
 
 	i = -1;
@@ -70,7 +70,7 @@ void				main_loop(t_sha *sh)
 		sh->ch = (sh->e & sh->f) ^ ((~sh->e) & sh->g);
 		sh->temp1 = sh->h + sh->s1 + sh->ch + g_w[i] + sh->m[i];
 		sh->s0 = ROT_RIGHT(sh->a, 2) ^ ROT_RIGHT(sh->a, 13) ^ ROT_RIGHT(sh->a, 22);
-		sh->maj = (sh->a ^ sh->b) ^ (sh->a & sh->c) ^ (sh->b & sh->c);
+		sh->maj = (sh->a & sh->b) ^ (sh->a & sh->c) ^ (sh->b & sh->c);
 		sh->temp2 = sh->s0 + sh->maj;
 		sh->h = sh->g;
 		sh->g = sh->f;
@@ -87,13 +87,11 @@ void				sha_setup(t_sha *sh)
 {
 	unsigned int	j;
 
-	j = 15;
+	j = -1;
 	ft_bzero(sh->m, sizeof(uint32_t) * 64);
-	for (unsigned int i = 0; i < 16; i++)
-	{
-		sh->m[i] = convert_to_big_endian(((uint32_t *)sh->msg)[i]);
-		printf("m[i] = %u\n", sh->m[i]);
-	}
+	while (++j < 16)
+		sh->m[j] = convert_to_big_endian(((uint32_t *)sh->msg)[j]);
+	j = 15;
 	while (++j < 64)
 	{
 		sh->s0 = ROT_RIGHT(sh->m[j - 15], 7) ^ ROT_RIGHT(sh->m[j - 15], 18) ^ (sh->m[j - 15] >> 3);
@@ -113,8 +111,10 @@ void				sha_setup(t_sha *sh)
 void				sha_algo(t_sha *sh)
 {
 	unsigned int i;
+	uint8_t			*name;
 
 	i = 0;
+	name = sh->msg;
 	printf("sha msg length = %llu\n", sh->msg_len);
 	sha_pre_processing(sh);
 	while (i < sh->msg_len)
@@ -122,13 +122,15 @@ void				sha_algo(t_sha *sh)
 		sha_setup(sh);
 		main_loop(sh);
 		add_to_hash(sh);
+		sh->msg += 64;
 		i += 64;
 	}
+	free(name);
 }
 
 void				handle_256(char **av, int flag)
 {
-	printf("enter");
+	// printf("enter");
 	int				i;
 	int				fd;
 	t_sha			sh;

@@ -142,7 +142,7 @@ void				pre_processing(t_ssl *ms);
 ** SHA Utilities
 */
 void				read_sha_stdin(int fd, t_sha *sh, char *input);
-int					sha_padding(uint8_t *init_msg, size_t init_len, t_sha *sh);
+int					sha_padding(uint8_t *init_msg, uint64_t init_len, t_sha *sh);
 void				sha_algo(t_sha *sh);
 void				print_sha_hash(t_sha *sh, char *input);
 void				sha_pre_processing(t_sha *sh);
