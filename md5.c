@@ -37,7 +37,7 @@ unsigned int g_k[64] = {	0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
 	0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
 };
 
-void				md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms)
+void				md5_padding(uint8_t *init_msg, uint64_t init_len, t_ssl *ms)
 {
 	uint64_t		new_len;
 
@@ -93,7 +93,6 @@ void				md5_rounds(t_ssl *ms)
 void				md5_algo(t_ssl *ms)
 {
 	unsigned int	i;
-	unsigned int	j;
 
 	i = 0;
 	pre_processing(ms);
@@ -106,13 +105,13 @@ void				md5_algo(t_ssl *ms)
 		ms->b = ms->var[1];
 		ms->c = ms->var[2];
 		ms->d = ms->var[3];
-		j = 0;
-		ms->msg32 = (uint32_t*)(ms->msg + i);
+		ms->msg32 = (uint32_t*)(ms->msg);
 		md5_rounds(ms);
 		ms->var[0] += ms->a;
 		ms->var[1] += ms->b;
 		ms->var[2] += ms->c;
 		ms->var[3] += ms->d;
+		ms->msg += 64;
 		i += 64;
 	}
 }

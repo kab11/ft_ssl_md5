@@ -29,13 +29,13 @@ void		read_sha_stdin(int fd, t_sha *sh, char *input)
 	char	buf[2];
 	char	*str;
 	char	*tmp;
-	size_t	init_len;
+	uint64_t	init_len;
 
 	str = NULL;
 	tmp = NULL;
 	init_len = 0;
 	buf[1] = '\0';
-	while (read(fd, buf, 1))
+	while (read(fd, buf, 1) > 0)
 	{
 		if (str == NULL)
 			str = ft_strdup(buf);
@@ -47,7 +47,8 @@ void		read_sha_stdin(int fd, t_sha *sh, char *input)
 		}
 		init_len++;
 	}
-	sha_padding((uint8_t*)str, init_len, sh);
+	// printf("string length = %zu\n", ft_strlen(str));
+	sha_padding((uint8_t*)str, ft_strlen(str), sh);
 	sha_algo(sh);
 	print_sha_hash(sh, input);
 }

@@ -25,13 +25,17 @@ unsigned int g_w[64] = {	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
 	0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-int					sha_padding(uint8_t *init_msg, uint64_t init_len, t_sha *sh)
+void					sha_padding(uint8_t *init_msg, uint64_t init_len, t_sha *sh)
 {
 	int			i;
 	uint64_t	new_len;
 
 	i = -1;
-	new_len = init_len * 8;
+	printf("init len = %llu\n", init_len);
+	if (init_len % 64 == 56)
+		new_len = init_len * 8 + 1;
+	else
+		new_len = init_len * 8;
 	while (new_len % 512 != 448)
 		new_len++;
 	new_len /= 8;
@@ -42,7 +46,6 @@ int					sha_padding(uint8_t *init_msg, uint64_t init_len, t_sha *sh)
 	while (++i < 8)
 		sh->msg[new_len + i] = ((uint8_t*)&init_len)[7 - i];
 	sh->msg_len = new_len + 8;
-	return (0);
 }
 
 void				add_to_hash(t_sha *sh)
@@ -59,13 +62,11 @@ void				add_to_hash(t_sha *sh)
 
 void				main_loop(t_sha *sh)
 {
-	// printf("sha256 main loop\n");
 	int				i;
 
 	i = -1;
 	while (++i < 64)
 	{
-		// printf("ROUND[%i]: %.8x\t%.8x\t%.8x\t%.8x\t%.8x\t%.8x\t%.8x\t%.8x\n", i, sh->a, sh->b, sh->c, sh->d, sh->e, sh->f, sh->g, sh->h);
 		sh->s1 = ROT_RIGHT(sh->e, 6) ^ ROT_RIGHT(sh->e, 11) ^ ROT_RIGHT(sh->e, 25);
 		sh->ch = (sh->e & sh->f) ^ ((~sh->e) & sh->g);
 		sh->temp1 = sh->h + sh->s1 + sh->ch + g_w[i] + sh->m[i];
@@ -115,7 +116,6 @@ void				sha_algo(t_sha *sh)
 
 	i = 0;
 	name = sh->msg;
-	printf("sha msg length = %llu\n", sh->msg_len);
 	sha_pre_processing(sh);
 	while (i < sh->msg_len)
 	{
@@ -130,7 +130,6 @@ void				sha_algo(t_sha *sh)
 
 void				handle_256(char **av, int flag)
 {
-	// printf("enter");
 	int				i;
 	int				fd;
 	t_sha			sh;

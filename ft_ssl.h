@@ -134,7 +134,7 @@ int					check_dir(char *name);
 unsigned			convert_to_big_endian(unsigned n);
 void				read_stdin_and_file(int fd, t_ssl *ms, char *input);
 void				md5_algo(t_ssl *ms);
-void				md5_padding(uint8_t *init_msg, size_t init_len, t_ssl *ms);
+void				md5_padding(uint8_t *init_msg, uint64_t init_len, t_ssl *ms);
 void				print_hash(t_ssl *ms, char *input);
 void				pre_processing(t_ssl *ms);
 
@@ -142,7 +142,7 @@ void				pre_processing(t_ssl *ms);
 ** SHA Utilities
 */
 void				read_sha_stdin(int fd, t_sha *sh, char *input);
-int					sha_padding(uint8_t *init_msg, uint64_t init_len, t_sha *sh);
+void					sha_padding(uint8_t *init_msg, uint64_t init_len, t_sha *sh);
 void				sha_algo(t_sha *sh);
 void				print_sha_hash(t_sha *sh, char *input);
 void				sha_pre_processing(t_sha *sh);
