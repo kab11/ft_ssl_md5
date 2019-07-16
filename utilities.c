@@ -68,7 +68,7 @@ void read_stdin_and_file(int fd, t_ssl *ms, char *input)
 		}
 		init_len++;
 	}
-	md5_padding((uint8_t*)str, init_len, ms);
+	md5_padding((uint8_t*)str, ft_strlen(str), ms);
 	md5_algo(ms);
 	print_hash(ms, input);
 }

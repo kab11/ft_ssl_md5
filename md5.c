@@ -41,6 +41,10 @@ void				md5_padding(uint8_t *init_msg, uint64_t init_len, t_ssl *ms)
 {
 	uint64_t		new_len;
 
+	if (init_len % 64 == 56)
+		new_len = init_len * 8 + 1;
+	else
+		new_len = init_len * 8;
 	new_len = init_len * 8;
 	while (new_len % 512 != 448)
 		new_len++;
