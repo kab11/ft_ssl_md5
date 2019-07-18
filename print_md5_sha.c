@@ -23,14 +23,14 @@ void	tranform_to_big_endian(t_ssl *ms)
 void	print_hash(t_ssl *ms, char *input)
 {
 	tranform_to_big_endian(ms);
-	if (!(ms->flag & (FLAG_Q | FLAG_R | PIPE)))
+	if (!(ms->flag & (FLAG_Q | FLAG_R)))
 	{
 		(ms->flag & FLAG_S) == 1 ? ft_printf("MD5 (\"%s\") = ", input)
 			: ft_printf("MD5 (%s) = ", input);
 	}
 	ft_printf("%.8x%.8x%.8x%.8x",
 		ms->var[0], ms->var[1], ms->var[2], ms->var[3]);
-	if (!(ms->flag & (FLAG_Q | PIPE)) && (ms->flag & FLAG_R))
+	if ((ms->flag & (FLAG_Q | PIPE)) && (ms->flag & FLAG_R))
 	{
 		(ms->flag & FLAG_S) == 1 ? ft_printf(" \"%s\"", input)
 			: ft_printf(" %s", input);
